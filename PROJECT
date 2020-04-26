@@ -1,0 +1,10 @@
+domain: redradrat.xyz
+repo: github.com/redradrat/shipcaps
+resources:
+- group: shipcaps
+  kind: Cap
+  version: v1beta1
+- group: shipcaps
+  kind: App
+  version: v1beta1
+version: "2"
