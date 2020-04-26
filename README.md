@@ -180,6 +180,8 @@ body. Do I have a corporate-wide registry of them? I might have a couple of helm
 common kustomize repos. But utilizing it, I still need some domain knowledge to utilize and explore those. Is there a 
 technical representation for this, that I can act upon and inventorize?
 
+**Conclusion**
+
 Those are **awesome** scenarios already. We're getting stuff done in potentially cross-functioning teams, and we're 
 packaging clusters of kubernetes resources into logical units, We're even going towards having a single source of truth 
 with little magic between commit and deployment! Arriving here means you're probably already doing loads of cool stuff.
