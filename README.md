@@ -8,6 +8,7 @@ tools and do not aim to replace them.
 Table of Contents
 =================
 
+  * [Idea](#idea)
   * [Design](#design)
      * [Cap ("Capability")](#cap-capability)
         * [Material](#material)
@@ -17,7 +18,52 @@ Table of Contents
            * [simple](#simple)
            * [helmchart](#helmchart)
      * [App ("Application")](#app-application)
-  * [Idea](#idea)
+
+## Idea
+
+Maintaining a kubernetes offering for any type of organisation can be a challange. In order to minimize the knowledge 
+required to run a service on kubernetes, a couple of tools emerge(d) to solve the problem of packaging Applications.
+Those packages consist of a number of kubernetes native resources, and are handled as a whole via Helm, Kustomize, Ship, 
+ManifestBundle, CosmicEgg or FluxCapacitor, in their various specific ways.
+
+Kubernetes Engineers/SREs/DevOpsEngineers usually are trained to deal with those formats the same way a Golang Developer 
+knows how to handle `go.mod`, `Gopkg.toml` and `glide.yaml`, or a Java Developer knows how to tame `pom.xml` and
+`build.gradle`. So we know how to come up with `values.yaml`, `kustomize.yaml`, etc. but sometimes also have the need to
+interface with our peers on our platforms that might not have this skillset.
+
+**The idea for *Shipcaps* is to separate the development, tuning and providing of kubernetes-native Applications
+and the usage/comsumption of packaged kubernetes applications by users in a normalized fashion.** 
+
+Scenario 1:
+In Acme, Corp. I want to provide a common platform for services for my product. Can I provide teams with a common way to
+get their dependencies? Do we need to get compliance/security clearance if Microservice A uses acme/postgres-chart and 
+Mircoservice B a postgres operator?
+
+Scenario 2:
+In Acme, Corp. we want to cut resource costs. As an SRE I'm currently going through all deployments and am streamlining 
+resource issues and autoscaling. I can only do that because I am efficient using 4 different packaging tools. Could this
+streamlining have been done by the users themselves? 
+
+Scenario 3:
+In Acme, Corp. we want a constant overview over deployments for compliance and security reasons. How does this inventory
+look like? Can I just list all currently running applications, and inspect their parts if an audit comes? GitOps maybe? 
+
+Scenario 4:
+In Acme, Corp. we want to allocate team's budgets based on whether they provide value for other teams. Team A plans to 
+create a custom postgres chart. Team B, C, D and E need postgres too. Do I have to pay for development if I'm managing 
+Team A? Can I relay development costs to thos other teams somehow? 
+
+Scenario 5:
+In Acme, Corp. we want to have one or more repositories of kubernetes-native applications, goverened by a distributed
+body. Do I have a corporate-wide registry of them? I might have a couple of helm chart registries, and a couple of 
+common kustomize repos. But utilizing it, I still need some domain knowledge to utilize and explore those. Is there a 
+technical representation for this, that I can act upon and inventorize?
+
+**Conclusion**
+
+Those are **awesome** scenarios already. We're getting stuff done in potentially cross-functioning teams, and we're 
+packaging clusters of kubernetes resources into logical units, We're even going towards having a single source of truth 
+with little magic between commit and deployment! Arriving here means you're probably already doing loads of cool stuff.
 
 ## Design
 
@@ -170,49 +216,3 @@ spec:
       value: mydb
 
 ```
-
-## Idea
-
-Maintaining a kubernetes offering for any type of organisation can be a challange. In order to minimize the knowledge 
-required to run a service on kubernetes, a couple of tools emerge(d) to solve the problem of packaging Applications.
-Those packages consist of a number of kubernetes native resources, and are handled as a whole via Helm, Kustomize, Ship, 
-ManifestBundle, CosmicEgg or FluxCapacitor, in their various specific ways.
-
-Kubernetes Engineers/SREs/DevOpsEngineers usually are trained to deal with those formats the same way a Golang Developer 
-knows how to handle `go.mod`, `Gopkg.toml` and `glide.yaml`, or a Java Developer knows how to tame `pom.xml` and
-`build.gradle`. So we know how to come up with `values.yaml`, `kustomize.yaml`, etc. but sometimes also have the need to
-interface with our peers on our platforms that might not have this skillset.
-
-**The idea for *Shipcaps* is to separate the development, tuning and providing of kubernetes-native Applications
-and the usage/comsumption of packaged kubernetes applications by users in a normalized fashion.** 
-
-Scenario 1:
-In Acme, Corp. I want to provide a common platform for services for my product. Can I provide teams with a common way to
-get their dependencies? Do we need to get compliance/security clearance if Microservice A uses acme/postgres-chart and 
-Mircoservice B a postgres operator?
-
-Scenario 2:
-In Acme, Corp. we want to cut resource costs. As an SRE I'm currently going through all deployments and am streamlining 
-resource issues and autoscaling. I can only do that because I am efficient using 4 different packaging tools. Could this
-streamlining have been done by the users themselves? 
-
-Scenario 3:
-In Acme, Corp. we want a constant overview over deployments for compliance and security reasons. How does this inventory
-look like? Can I just list all currently running applications, and inspect their parts if an audit comes? GitOps maybe? 
-
-Scenario 4:
-In Acme, Corp. we want to allocate team's budgets based on whether they provide value for other teams. Team A plans to 
-create a custom postgres chart. Team B, C, D and E need postgres too. Do I have to pay for development if I'm managing 
-Team A? Can I relay development costs to thos other teams somehow? 
-
-Scenario 5:
-In Acme, Corp. we want to have one or more repositories of kubernetes-native applications, goverened by a distributed
-body. Do I have a corporate-wide registry of them? I might have a couple of helm chart registries, and a couple of 
-common kustomize repos. But utilizing it, I still need some domain knowledge to utilize and explore those. Is there a 
-technical representation for this, that I can act upon and inventorize?
-
-**Conclusion**
-
-Those are **awesome** scenarios already. We're getting stuff done in potentially cross-functioning teams, and we're 
-packaging clusters of kubernetes resources into logical units, We're even going towards having a single source of truth 
-with little magic between commit and deployment! Arriving here means you're probably already doing loads of cool stuff.
