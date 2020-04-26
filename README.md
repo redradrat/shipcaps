@@ -7,7 +7,7 @@ tools and do not aim to replace them.
 
 ## Design
 
-In Shipcaps we're dealing with 2 different types. A `Cap` as in "Capability", and an `App` as in "Application".
+In Shipcaps we're dealing with 2 different kinds. A `Cap` as in "Capability", and an `App` as in "Application".
 
 ### Cap ("Capability")
 
