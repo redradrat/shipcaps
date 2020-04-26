@@ -5,6 +5,20 @@ With our Custom Resources, we represent *providing* a kubernetes application, an
 normalized fashion. We embrace kubernetes' ecosystem diversity and are normalizing operations with various existing 
 tools and do not aim to replace them.
 
+Table of Contents
+=================
+
+  * [Design](#design)
+     * [Cap ("Capability")](#cap-capability)
+        * [Material](#material)
+           * [repo](#repo)
+           * [manifests](#manifests)
+        * [Types](#types)
+           * [simple](#simple)
+           * [helmchart](#helmchart)
+     * [App ("Application")](#app-application)
+  * [Idea](#idea)
+
 ## Design
 
 In Shipcaps we're dealing with 2 different kinds. A `Cap` as in "Capability", and an `App` as in "Application".
