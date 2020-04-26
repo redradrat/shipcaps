@@ -111,7 +111,7 @@ spec:
 
 Right now the follwing Cap types are supported:
 
-**simple**
+##### simple
 
 The `simple` Cap type refers to plain kubernetes manifests enriched with simple placeholder-replacement functionality.
 
@@ -124,7 +124,7 @@ Supported material:
 * repo
 * manifests
 
-**helmchart**
+##### helmchart
 
 The `helmchart` Cap type refers to a helm chart and allows to defines a set of inputs. This type expects the the 
 [helm-operator](https://github.com/fluxcd/helm-operator/) to be available.
