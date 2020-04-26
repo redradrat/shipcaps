@@ -34,7 +34,8 @@ spec:
   material: ## Here goes our material spec
 ```
 
-Following materials are supported:
+
+**Supported Material**:
 
 ##### repo
 
@@ -109,7 +110,8 @@ spec:
       ...
 ```
 
-Right now the follwing Cap types are supported:
+
+**Supported types**:
 
 ##### simple
 
