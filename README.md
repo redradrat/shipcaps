@@ -69,6 +69,8 @@ with little magic between commit and deployment! Arriving here means you're prob
 
 In Shipcaps we're dealing with 2 different kinds. A `Cap` as in "Capability", and an `App` as in "Application".
 
+![design](idea-sketch.png)
+
 ### Cap ("Capability")
 
 See [examples/helmcap.yaml](./examples/helmcap.yaml).
