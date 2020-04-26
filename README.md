@@ -36,7 +36,7 @@ spec:
 
 Following materials are supported:
 
-**repo**
+##### repo
 
 The Git Repo material is really the embodyment of our GitOps strategy. With this material spec we can refer to an 
 existing git repo or a subdirectory in it, and expect our [type](#types)-specific sources at this location.
@@ -62,7 +62,7 @@ spec:
     path: /mychart
 ```
 
-**manifests**
+##### manifests
 
 The manifests material spec is a quick-and-easy way to abstract a single or a couple of manifests into a Cap.
 
