@@ -19,7 +19,6 @@ package v1beta1
 import (
 	"encoding/json"
 
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,10 +28,10 @@ type AppValues map[string]json.RawMessage
 // AppSpec defines the desired state of App
 type AppSpec struct {
 
-	// CapRef is reference to the Cap that should be applied
+	// CapRef refers to the Cap that should be applied
 	//
 	// +kubebuilder:validation:Required
-	CapRef v1.ObjectReference `json:"capRef"`
+	CapRef string `json:"capRef"`
 
 	// Values is a list of inputs needed to create this app
 	//

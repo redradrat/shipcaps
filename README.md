@@ -11,7 +11,7 @@ In Shipcaps we're dealing with 2 different kinds. A `Cap` as in "Capability", an
 
 ### Cap ("Capability")
 
-See examples/helmcap.yaml.
+See [examples/helmcap.yaml](./examples/helmcap.yaml).
 
 A `Cap` defines a packaged kubernetes application. This can be a couple of manifests with maybe a couple of 
 placeholder-values for environment-specific config, or a Helm Chart checked into some common git repository I want to 
@@ -29,7 +29,7 @@ Usage:
 apiVersion: shipcaps.redradrat.xyz/v1beta1
 kind: Cap
 metadata:
-  name: mycap
+  name: acme-es
 spec:
   material: ## Here goes our material spec
 ```
@@ -60,7 +60,7 @@ spec:
           secretKeyRef:
             name: repoauth
             key: repo-password
-    path: /mychart
+    path: /elasticsearch
 ```
 
 ##### manifests
@@ -102,7 +102,7 @@ Usage:
 apiVersion: shipcaps.redradrat.xyz/v1beta1
 kind: Cap
 metadata:
-  name: mycap
+  name: acme-es
 spec:
   type: __TYPE_GOES_HERE__
   inputs:
@@ -137,10 +137,25 @@ Supported material:
 
 ### App ("Application")
 
-See examples/postgresapp.yaml
+See [examples/postgresapp.yaml](./examples/postgresapp.yaml)
 
-An `App` defines an instance of a `Cap`. It specifies the `Cap` and the values it needs. After being reconciled by the 
-shipcaps operator, the application will be usable.
+An `App` defines an instance of a `Cap`. It references the `Cap` and defines the values it requires. After being 
+reconciled by the shipcaps operator, the application will be usable.
+
+Usage:
+```yaml
+apiVersion: shipcaps.redradrat.xyz/v1beta1
+kind: App
+metadata:
+  name: myelastic
+  namespace: here
+spec:
+  capRef: acme-es # This is a single string, as caps are cluster-wide
+  values:
+    - key: dbname
+      value: mydb
+
+```
 
 ## Idea
 

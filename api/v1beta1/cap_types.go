@@ -22,9 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // CapType specifies the type of a Cap. Used for identifying a backend.
 type CapType string
 
@@ -168,6 +165,7 @@ type CapStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:path=caps,scope=Cluster,shortName=cap
 
 // Cap is the Schema for the caps API
 type Cap struct {
