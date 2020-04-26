@@ -20,15 +20,3 @@ spec:
       uri: https://github.com/redradrat/charts
       ref: v1.0
     path: /postgres
-    manifests:
-      apiVersion: v1
-      kind: List
-      items:
-      - apiVersion: v1
-        kind: Namespace
-        metadata: bla
-      - apiVersion: v1
-        kind: Namespace
-        metadata: blabla
-
-

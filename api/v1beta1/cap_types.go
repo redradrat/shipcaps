@@ -32,9 +32,6 @@ const (
 	// SimpleCapType is a simple value-replacement Cap
 	SimpleCapType CapType = "simple"
 
-	// PlainCapType for directly applying manifests without processing
-	PlainCapType CapType = "plain"
-
 	// HelmChartCapType abstracts a Helm Chart as a Cap
 	HelmChartCapType CapType = "helmchart"
 )
@@ -110,10 +107,6 @@ type HelmMaterial struct {
 
 // HelmMaterial is the simple-specific material
 type SimpleMaterial struct {
-}
-
-// PlainMaterial is the simple-specific material
-type PlainMaterial struct {
 }
 
 // CapMaterial is a the material of the respective supported types
