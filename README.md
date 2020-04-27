@@ -1,5 +1,7 @@
 # Shipcaps
 
+[![Join the chat at https://gitter.im/shipcaps/community](https://badges.gitter.im/shipcaps/community.svg)](https://gitter.im/shipcaps/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 A meta layer for kubernetes applications. Shipcaps provides a meta layer over various awsome packaging tools and projects. 
 With our Custom Resources, we represent *providing* a kubernetes application, and *using* a kubernetes application in a 
 normalized fashion. We embrace kubernetes' ecosystem diversity and are normalizing operations with various existing 
