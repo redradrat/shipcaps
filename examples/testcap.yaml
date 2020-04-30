@@ -8,6 +8,9 @@ spec:
     - key: ingressClass
       type: string
       targetId: helloworld.service.ingressClass
+  values:
+    - value: anotherone
+      targetId: helloworld.service.testValue
   material:
     type: repo
     repo:
