@@ -1,45 +1,60 @@
 package v1beta1
 
 import (
-	"encoding/json"
 	"fmt"
 )
 
-// MapValues returns a list of the mapped values, and checks whether all types are assertable as specified
-func (ins CapInputs) MapValues(values AppValues) (map[string]interface{}, error) {
-	outmap := make(map[string]interface{})
-	for _, in := range ins {
-		var err bool
-		var data interface{}
-		if err := json.Unmarshal(values[in.Key], &data); err != nil {
-			return nil, err
+func (material *CapMaterial) Check() error {
+	var matType = material.Type
+	switch matType {
+	case ManifestsMaterialType:
+		if len(material.Manifests) == 0 {
+			return ErrInvalidMaterialSpec("material spec does not define any manifests")
 		}
-		switch in.Type {
-		case StringInputType:
-			if _, ok := data.(string); !ok {
-				err = true
-			}
-		case StringListInputType:
-			if _, ok := data.([]string); !ok {
-				err = true
-			}
-		case IntInputType:
-			if _, ok := data.(int); !ok {
-				err = true
-			}
-		case FloatInputType:
-			if _, ok := data.(float32); !ok {
-				err = true
-			}
-		case PasswordInputType:
-			if _, ok := data.(string); !ok {
-				err = true
-			}
+	case RepoMaterialType:
+		if material.Repo.URI == "" {
+			return ErrInvalidMaterialSpec("material spec does not define a repo URI")
 		}
-		if err {
-			return nil, fmt.Errorf("required input '%s' is not of type '%s'", in.Key, in.Type)
-		}
-		outmap[in.Key] = values[in.Key]
+	default:
+		return ErrUnknownMaterialType(fmt.Sprintf("material spec type is unknown '%s'", matType))
 	}
-	return outmap, nil
+	return nil
+}
+
+type CapErrorCode string
+
+const (
+	InvalidMaterialSpecCode CapErrorCode = "InvalidMaterialSpec"
+	UnknownMaterialTypeCode CapErrorCode = "UnknownMaterialType"
+)
+
+type CapError struct {
+	code    CapErrorCode
+	message string
+}
+
+func (err CapError) Error() string {
+	return err.message
+}
+
+func ErrInvalidMaterialSpec(msg string) CapError {
+	return CapError{
+		code:    InvalidMaterialSpecCode,
+		message: msg,
+	}
+}
+
+func ErrUnknownMaterialType(msg string) CapError {
+	return CapError{
+		code:    UnknownMaterialTypeCode,
+		message: msg,
+	}
+}
+
+func IsErr(err error, code CapErrorCode) bool {
+	myerr, ok := err.(CapError)
+	if !ok {
+		return false
+	}
+	return myerr.code == code
 }

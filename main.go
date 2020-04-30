@@ -19,7 +19,9 @@ package main
 import (
 	"flag"
 	"os"
+	"time"
 
+	helmv1 "github.com/fluxcd/helm-operator/pkg/apis/helm.fluxcd.io/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -39,14 +41,19 @@ var (
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 
+	// Add helm operator scheme
+	_ = helmv1.AddToScheme(scheme)
+
 	_ = shipcapsv1beta1.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
 
 func main() {
 	var metricsAddr string
+	var requeueInterval string
 	var enableLeaderElection bool
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
+	flag.StringVar(&requeueInterval, "requeue-interval", "1m", "The interval after wich to requeue the app. (see https://godoc.org/time#ParseDuration)")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -74,10 +81,17 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Cap")
 		os.Exit(1)
 	}
+
+	parsedInterval, err := time.ParseDuration(requeueInterval)
+	if err != nil {
+		setupLog.Error(err, "unable to parse requeue interval", "controller", "App")
+		os.Exit(1)
+	}
 	if err = (&controllers.AppReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("App"),
-		Scheme: mgr.GetScheme(),
+		Client:          mgr.GetClient(),
+		Log:             ctrl.Log.WithName("controllers").WithName("App"),
+		Scheme:          mgr.GetScheme(),
+		RequeueDuration: parsedInterval,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "App")
 		os.Exit(1)

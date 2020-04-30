@@ -45,7 +45,7 @@ func (r *CapReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	var cap shipcapsv1beta1.Cap
 	err := r.Get(ctx, req.NamespacedName, &cap)
 	if err != nil {
-		log.V(1).Info("unable to fetch App")
+		log.V(1).Info("unable to fetch Cap")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 

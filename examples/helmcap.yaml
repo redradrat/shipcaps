@@ -7,14 +7,22 @@ spec:
   inputs:
   - key: dbname
     type: string
+    targetId: db.name
   - key: dbadmin
     type: string
+    targetId: db.admin.name
   - key: dbadminpassword
     type: password
     optional: true
+    targetId: db.admin.password
   - key: dbusers
     type: stringlist
     optional: true
+    targetId: db.users
+  values:
+    - value: "teststring"
+      targetId:
+    - value: 21
   material:
     repo:
       uri: https://github.com/redradrat/charts

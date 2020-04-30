@@ -18,8 +18,16 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"strconv"
+	"strings"
+	"time"
 
+	helmv1 "github.com/fluxcd/helm-operator/pkg/apis/helm.fluxcd.io/v1"
 	"github.com/go-logr/logr"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -30,8 +38,9 @@ import (
 // AppReconciler reconciles a App object
 type AppReconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log             logr.Logger
+	Scheme          *runtime.Scheme
+	RequeueDuration time.Duration
 }
 
 // +kubebuilder:rbac:groups=shipcaps.redradrat.xyz,resources=apps,verbs=get;list;watch;create;update;patch;delete
@@ -45,22 +54,129 @@ func (r *AppReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	err := r.Get(ctx, req.NamespacedName, &app)
 	if err != nil {
 		log.V(1).Info("unable to fetch App")
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return ctrl.Result{
+			RequeueAfter: r.RequeueDuration,
+		}, client.IgnoreNotFound(err)
 	}
 
-	// return if only status/metadata updated
-	if app.Status.ObservedGeneration == app.ObjectMeta.Generation {
-		return ctrl.Result{}, nil
-	} else {
-		app.Status.ObservedGeneration = app.ObjectMeta.Generation
-		r.Status().Update(ctx, &app)
+	log.V(1).Info(fmt.Sprintf("Reconciling app '%s/%s'", app.Name, app.Namespace))
+
+	cap := shipcapsv1beta1.Cap{}
+	err = r.Client.Get(ctx, client.ObjectKey{Name: app.Spec.CapRef}, &cap)
+	if err != nil {
+		return ctrl.Result{}, err
 	}
 
-	return ctrl.Result{}, nil
+	if err := cap.Spec.Material.Check(); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	capValues, err := MergedCapValues(cap, app, log)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	switch cap.Spec.Type {
+	case shipcapsv1beta1.SimpleCapType:
+		if err := r.ReconcileSimpleCapTypeApp(cap, capValues, ctx, log); err != nil {
+			return ctrl.Result{}, err
+		}
+	case shipcapsv1beta1.HelmChartCapType:
+		if err := r.ReconcileHelmChartCapTypeApp(cap, app, capValues, ctx, log); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	return ctrl.Result{
+		RequeueAfter: r.RequeueDuration,
+	}, nil
+}
+
+func (r *AppReconciler) ReconcileHelmChartCapTypeApp(cap shipcapsv1beta1.Cap, app shipcapsv1beta1.App, capValues []CapValue, ctx context.Context, log logr.Logger) error {
+	helmValueMap := make(map[string]interface{})
+	for _, val := range capValues {
+		helmValueMap[string(val.TargetIdentifier)] = val.Value
+	}
+
+	helmRel := helmv1.HelmRelease{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      app.Name,
+			Namespace: app.Namespace,
+		},
+	}
+	couFunc := func() error {
+		helmRel.Spec.Values = helmValueMap
+		cs := helmv1.GitChartSource{
+			GitURL: cap.Spec.Material.Repo.URI,
+			Ref:    cap.Spec.Material.Repo.Ref,
+			Path:   cap.Spec.Material.Repo.Path,
+		}
+		helmRel.Spec.GitChartSource = &cs
+		return nil
+	}
+	_, err := ctrl.CreateOrUpdate(ctx, r.Client, &helmRel, couFunc)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *AppReconciler) ReconcileSimpleCapTypeApp(cap shipcapsv1beta1.Cap, capValues []CapValue, ctx context.Context, log logr.Logger) error {
+	var processedOut []unstructured.Unstructured
+
+	mat := cap.Spec.Material
+	switch mat.Type {
+	case shipcapsv1beta1.ManifestsMaterialType:
+		for _, entry := range mat.Manifests {
+			bytes, err := json.Marshal(entry.Object)
+			if err != nil {
+				return err
+			}
+			newbytes := SubSimplePlaceholders(bytes, capValues)
+			newparsed := unstructured.Unstructured{}
+			if err := json.Unmarshal(newbytes, &newparsed); err != nil {
+				return err
+			}
+			processedOut = append(processedOut, newparsed)
+		}
+	default:
+		return fmt.Errorf("material type '%s' not yet supported for cap type '%s'", mat.Type, cap.Spec.Type)
+	}
+
+	for _, entry := range processedOut {
+
+		couFunc := func() error { return nil }
+		_, err := ctrl.CreateOrUpdate(ctx, r.Client, &entry, couFunc)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func SubSimplePlaceholders(in []byte, vals []CapValue) []byte {
+	var out string
+	for _, val := range vals {
+		switch val.Value.(type) {
+		case string:
+			out = strings.ReplaceAll(string(in), fmt.Sprintf("!Rep{%s}", val.TargetIdentifier), val.Value.(string))
+		case int:
+			out = strings.ReplaceAll(string(in), fmt.Sprintf("!Rep{%s}", val.TargetIdentifier), strconv.Itoa(val.Value.(int)))
+		case float32:
+			out = strings.ReplaceAll(string(in), fmt.Sprintf("!Rep{%s}", val.TargetIdentifier), fmt.Sprintf("%.2f", val.Value.(float32)))
+		case []string:
+			joinedVal := strings.Join(val.Value.([]string), ", ")
+			out = strings.ReplaceAll(string(in), fmt.Sprintf("!Rep{%s}", val.TargetIdentifier), joinedVal)
+		}
+	}
+	return []byte(out)
 }
 
 func (r *AppReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&shipcapsv1beta1.App{}).
+		Owns(&helmv1.HelmRelease{}).
 		Complete(r)
 }

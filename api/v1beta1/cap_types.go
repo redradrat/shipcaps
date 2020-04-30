@@ -17,6 +17,8 @@ limitations under the License.
 package v1beta1
 
 import (
+	"encoding/json"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -33,20 +35,20 @@ const (
 	HelmChartCapType CapType = "helmchart"
 )
 
-// InputType specifies the type of an Input. Used for parsing.
-type InputType string
+// ValueType specifies the type of an Input. Used for parsing.
+type ValueType string
 
 const (
 	// StringInputType identifies an Input should be parsed as string
-	StringInputType InputType = "string"
+	StringInputType ValueType = "string"
 	// PasswordInputType identifies an Input should be parsed as string but handled with care https://www.youtube.com/watch?v=1o4s1KVJaVA
-	PasswordInputType InputType = "password"
+	PasswordInputType ValueType = "password"
 	// IntInputType identifies an Input should be parsed as int
-	IntInputType InputType = "int"
+	IntInputType ValueType = "int"
 	// FloatInputType identifies an Input should be parsed as float
-	FloatInputType InputType = "float"
+	FloatInputType ValueType = "float"
 	// StringListInputType identifies an Input should be parsed as a list of string
-	StringListInputType InputType = "stringlist"
+	StringListInputType ValueType = "stringlist"
 )
 
 // CapInput defines an Input required for our Cap
@@ -56,13 +58,20 @@ type CapInput struct {
 	// Type identifies the type of the this input (string, int, ...). Used for parsing.
 	//
 	// +kubebuilder:validation:Required
-	Type InputType `json:"type"`
+	Type ValueType `json:"type"`
 
 	// Optional identifies whether this Input is required or not
 	//
 	// +kubebuilder:validation:Optional
 	Optional bool `json:"optional"`
+
+	// TransformationIdentifier identifies the replacement placeholder.
+	//
+	// +kubebuilder:validation:Optional
+	TargetIdentifier TargetIdentifier `json:"targetId,omitempty"`
 }
+
+type TargetIdentifier string
 
 // CapInputs is a list of CapInputs
 type CapInputs []CapInput
@@ -92,22 +101,31 @@ type RepoSpec struct {
 	// +kubebuilder:validation:Optional
 	Ref string `json:"ref,omitempty"`
 
+	// Path specifies a path a chart can be found at in this repo
+	//
+	// +kubebuilder:validation:Optional
+	Path string `json:"path,omitempty"`
+
 	// Auth potentially needed authentication credentials for the referenced material
 	//
 	// +kubebuilder:validation:Optional
 	Auth MaterialAuth `json:"auth,omitempty"`
 }
 
-// HelmMaterial is the helm-specific material
-type HelmMaterial struct {
-}
+type MaterialType string
 
-// HelmMaterial is the simple-specific material
-type SimpleMaterial struct {
-}
+const (
+	ManifestsMaterialType MaterialType = "manifests"
+	RepoMaterialType      MaterialType = "repo"
+)
 
 // CapMaterial is a the material of the respective supported types
 type CapMaterial struct {
+
+	// Type is specification of the material type. Needed for material validation.
+	//
+	// +kubebuilder:validation:Required
+	Type MaterialType `json:"type"`
 
 	// Repo is specification of the git repository (GitOps y'all!)
 	//
@@ -124,12 +142,6 @@ type CapMaterial struct {
 	// +kubebuilder:validation:XEmbeddedResource
 	// +kubebuilder:validation:Optional
 	Manifests []unstructured.Unstructured `json:"manifests,omitempty"`
-
-	Helm HelmMaterial `json:",inline"`
-
-	Simple SimpleMaterial `json:",inline"`
-
-	Plain PlainMaterial `json:",inline"`
 }
 
 // CapSpec defines the desired state of Cap
@@ -144,6 +156,11 @@ type CapSpec struct {
 	//
 	// +kubebuilder:validation:Optional
 	Inputs CapInputs `json:"inputs,omitempty"`
+
+	// Values allows to specify provided values. This can reduce user choice when using a Helm Chart for example.
+	//
+	// +kubebuilder:validation:Optional
+	Values json.RawMessage `json:"values,omitempty"`
 
 	// Matter specifies the matter of the specified type (helm chart, manifests, etc.)
 	//

@@ -1,25 +1,19 @@
 apiVersion: shipcaps.redradrat.xyz/v1beta1
 kind: Cap
 metadata:
-  name: postgres
+  name: test
 spec:
   type: helmchart
   inputs:
-  - key: dbname
-    type: string
-  - key: dbadmin
-    type: string
-  - key: dbadminpassword
-    type: password
-    optional: true
-  - key: dbusers
-    type: stringlist
-    optional: true
+    - key: ingressClass
+      type: string
+      targetId: helloworld.service.ingressClass
   material:
+    type: repo
     repo:
-      uri: https://github.com/redradrat/charts
-      ref: v1.0
-    path: /postgres
+      uri: https://github.com/stakater-charts/helloworld
+      path: helloworld
+      ref: master
     manifests:
     - apiVersion: v1
       kind: Namespace

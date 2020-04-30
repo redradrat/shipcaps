@@ -11,8 +11,10 @@ spec:
     kind: Cap
     listKind: CapList
     plural: caps
+    shortNames:
+    - cap
     singular: cap
-  scope: ""
+  scope: Cluster
   validation:
     openAPIV3Schema:
       description: Cap is the Schema for the caps API
@@ -79,6 +81,10 @@ spec:
                     description: Optional identifies whether this Input is required
                       or not
                     type: boolean
+                  targetId:
+                    description: TransformationIdentifier identifies the replacement
+                      placeholder.
+                    type: string
                   type:
                     description: Type identifies the type of the this input (string,
                       int, ...). Used for parsing.
@@ -135,7 +141,7 @@ spec:
                               description: 'Selects a field of the pod: supports metadata.name,
                                 metadata.namespace, metadata.labels, metadata.annotations,
                                 spec.nodeName, spec.serviceAccountName, status.hostIP,
-                                status.podIP, status.podIPs.'
+                                status.podIP.'
                               properties:
                                 apiVersion:
                                   description: Version of the schema the FieldPath
@@ -215,7 +221,7 @@ spec:
                               description: 'Selects a field of the pod: supports metadata.name,
                                 metadata.namespace, metadata.labels, metadata.annotations,
                                 spec.nodeName, spec.serviceAccountName, status.hostIP,
-                                status.podIP, status.podIPs.'
+                                status.podIP.'
                               properties:
                                 apiVersion:
                                   description: Version of the schema the FieldPath
@@ -273,6 +279,10 @@ spec:
                       - password
                       - username
                       type: object
+                    path:
+                      description: Path specifies a path a chart can be found at in
+                        this repo
+                      type: string
                     ref:
                       description: Ref specifies a GitRef to use for the repo
                       type: string
@@ -283,12 +293,22 @@ spec:
                   required:
                   - uri
                   type: object
+                type:
+                  description: Type is specification of the material type. Needed
+                    for material validation.
+                  type: string
               required:
               - repo
+              - type
               type: object
             type:
               description: Type specifies the type of to our Cap (e.g. what is our
                 backend? Helm, Manifests, ...)
+              type: string
+            values:
+              description: Values allows to specify provided values. This can reduce
+                user choice when using a Helm Chart for example.
+              format: byte
               type: string
           required:
           - material

@@ -2,7 +2,6 @@ package webhooks
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -41,21 +40,15 @@ func (v *AppValidator) Handle(ctx context.Context, req admission.Request) admiss
 			continue
 		}
 		// Now if our App Values do not contain the required input key, then return NOT ALLOWED
-		_, ok := app.Spec.Values[input.Key]
-		if !ok {
-			return admission.ValidationResponse(
-				false,
-				fmt.Sprintf("required key '%s' for referenced Cap not provided", input.Key))
-		}
 	}
 
 	// Let's check whether the actual mapping works. Errors are thrown wen the type is not assertable. So
 	// we can just use that message as reason.
-	if _, err := cap.Spec.Inputs.MapValues(app.Spec.Values); err != nil {
-		return admission.ValidationResponse(
-			false,
-			err.Error())
-	}
+	//if _, err := cap.Spec.Material.CheckValues(app.Spec.Values); err != nil {
+	//	return admission.ValidationResponse(
+	//		false,
+	//		err.Error())
+	//}
 
 	// Now we know that we did set everything properly
 	return admission.ValidationResponse(true, "all required key for referenced cap were provided")

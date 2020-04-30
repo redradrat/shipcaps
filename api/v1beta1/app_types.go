@@ -22,9 +22,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// AppValues is a list of AppValue
-type AppValues map[string]json.RawMessage
-
 // AppSpec defines the desired state of App
 type AppSpec struct {
 
@@ -36,7 +33,7 @@ type AppSpec struct {
 	// Values is a list of inputs needed to create this app
 	//
 	// +kubebuilder:validation:Optional
-	Values AppValues `json:"values,omitempty"`
+	Values json.RawMessage `json:"values,omitempty"`
 }
 
 // AppStatus defines the observed state of App

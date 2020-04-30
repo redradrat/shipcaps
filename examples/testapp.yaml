@@ -1,0 +1,10 @@
+apiVersion: shipcaps.redradrat.xyz/v1beta1
+kind: App
+metadata:
+  name: test
+  namespace: default
+spec:
+  capRef: test
+  values:
+    - key: ingressClass
+      value: ralph
