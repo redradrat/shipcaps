@@ -48,8 +48,7 @@ func MergedCapValues(cap shipcapsv1beta1.Cap, app shipcapsv1beta1.App, log logr.
 
 	avu := AppValueUnmarshaler{}
 	if app.Spec.Values != nil {
-		log.V(1).Info("unmarshaling string...")
-		log.V(1).Info(string(app.Spec.Values))
+		log.V(1).Info(fmt.Sprintf("unmarshaling string %s", string(app.Spec.Values)))
 		if err := json.Unmarshal(app.Spec.Values, &avu); err != nil {
 			return nil, err
 		}
@@ -63,8 +62,7 @@ func MergedCapValues(cap shipcapsv1beta1.Cap, app shipcapsv1beta1.App, log logr.
 
 	unmarshaler := CapValueUnmarshaler{}
 	if cap.Spec.Values != nil {
-		log.V(1).Info("unmarshaling string...")
-		log.V(1).Info(string(cap.Spec.Values))
+		log.V(1).Info(fmt.Sprintf("unmarshaling string %s", string(cap.Spec.Values)))
 		if err := json.Unmarshal(cap.Spec.Values, &unmarshaler); err != nil {
 			return nil, err
 		}

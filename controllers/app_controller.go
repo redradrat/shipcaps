@@ -60,8 +60,6 @@ func (r *AppReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}, client.IgnoreNotFound(err)
 	}
 
-	log.V(1).Info(fmt.Sprintf("Reconciling app '%s/%s'", app.Name, app.Namespace))
-
 	cap := shipcapsv1beta1.Cap{}
 	err = r.Client.Get(ctx, client.ObjectKey{Name: app.Spec.CapRef}, &cap)
 	if err != nil {

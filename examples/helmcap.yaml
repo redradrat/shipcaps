@@ -21,8 +21,7 @@ spec:
     targetId: db.users
   values:
     - value: "teststring"
-      targetId:
-    - value: 21
+      targetId: db.somestring
   material:
     repo:
       uri: https://github.com/redradrat/charts
