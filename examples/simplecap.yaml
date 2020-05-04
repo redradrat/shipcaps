@@ -1,0 +1,24 @@
+apiVersion: shipcaps.redradrat.xyz/v1beta1
+kind: Cap
+metadata:
+  name: namespaces
+spec:
+  type: simple
+  inputs:
+    - key: nsname
+      type: string
+      targetId: namespacename
+  values:
+    - value: "teststring"
+      targetId: teststring
+  material:
+    type: manifests
+    manifests:
+      - apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: "!Rep{teststring}"
+      - apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: "!Rep{namespacename}"

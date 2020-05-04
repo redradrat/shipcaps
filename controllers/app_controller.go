@@ -31,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	shipcapsv1beta1 "github.com/redradrat/shipcaps/api/v1beta1"
 )
@@ -78,7 +79,7 @@ func (r *AppReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	switch cap.Spec.Type {
 	case shipcapsv1beta1.SimpleCapType:
-		if err := r.ReconcileSimpleCapTypeApp(cap, capValues, ctx, log); err != nil {
+		if err := r.ReconcileSimpleCapTypeApp(cap, app, capValues, ctx, log); err != nil {
 			return ctrl.Result{}, err
 		}
 	case shipcapsv1beta1.HelmChartCapType:
@@ -122,24 +123,21 @@ func (r *AppReconciler) ReconcileHelmChartCapTypeApp(cap shipcapsv1beta1.Cap, ap
 	return nil
 }
 
-func (r *AppReconciler) ReconcileSimpleCapTypeApp(cap shipcapsv1beta1.Cap, capValues []CapValue, ctx context.Context, log logr.Logger) error {
+func (r *AppReconciler) ReconcileSimpleCapTypeApp(cap shipcapsv1beta1.Cap, app shipcapsv1beta1.App, capValues []CapValue, ctx context.Context, log logr.Logger) error {
 	var processedOut []unstructured.Unstructured
 
 	mat := cap.Spec.Material
 	switch mat.Type {
 	case shipcapsv1beta1.ManifestsMaterialType:
-		for _, entry := range mat.Manifests {
-			bytes, err := json.Marshal(entry.Object)
-			if err != nil {
-				return err
-			}
-			newbytes := SubSimplePlaceholders(bytes, capValues)
-			newparsed := unstructured.Unstructured{}
-			if err := json.Unmarshal(newbytes, &newparsed); err != nil {
-				return err
-			}
-			processedOut = append(processedOut, newparsed)
+		newbytes := SubSimplePlaceholders(mat.Manifests, capValues)
+		if PlaceholdersLeft(newbytes) {
+			return fmt.Errorf("not all required values have been given")
 		}
+		newparsed := []unstructured.Unstructured{}
+		if err := json.Unmarshal(newbytes, &newparsed); err != nil {
+			return err
+		}
+		processedOut = append(processedOut, newparsed...)
 	default:
 		return fmt.Errorf("material type '%s' not yet supported for cap type '%s'", mat.Type, cap.Spec.Type)
 	}
@@ -147,7 +145,13 @@ func (r *AppReconciler) ReconcileSimpleCapTypeApp(cap shipcapsv1beta1.Cap, capVa
 	for _, entry := range processedOut {
 
 		couFunc := func() error { return nil }
-		_, err := ctrl.CreateOrUpdate(ctx, r.Client, &entry, couFunc)
+		if entry.GetNamespace() != "" {
+			if err := controllerutil.SetControllerReference(&app, &entry, r.Scheme); err != nil {
+				return err
+			}
+		}
+		res, err := ctrl.CreateOrUpdate(ctx, r.Client, &entry, couFunc)
+		log.V(1).Info(fmt.Sprintf("resource [kind: %s, name: %s, namespace: %s] %s", entry.GetKind(), entry.GetName(), entry.GetNamespace(), res))
 		if err != nil {
 			return err
 		}
@@ -157,21 +161,28 @@ func (r *AppReconciler) ReconcileSimpleCapTypeApp(cap shipcapsv1beta1.Cap, capVa
 }
 
 func SubSimplePlaceholders(in []byte, vals []CapValue) []byte {
-	var out string
+	out := string(in)
 	for _, val := range vals {
 		switch val.Value.(type) {
 		case string:
-			out = strings.ReplaceAll(string(in), fmt.Sprintf("!Rep{%s}", val.TargetIdentifier), val.Value.(string))
+			out = strings.ReplaceAll(string(out), fmt.Sprintf("!Rep{%s}", val.TargetIdentifier), val.Value.(string))
 		case int:
-			out = strings.ReplaceAll(string(in), fmt.Sprintf("!Rep{%s}", val.TargetIdentifier), strconv.Itoa(val.Value.(int)))
+			out = strings.ReplaceAll(string(out), fmt.Sprintf("!Rep{%s}", val.TargetIdentifier), strconv.Itoa(val.Value.(int)))
 		case float32:
-			out = strings.ReplaceAll(string(in), fmt.Sprintf("!Rep{%s}", val.TargetIdentifier), fmt.Sprintf("%.2f", val.Value.(float32)))
+			out = strings.ReplaceAll(string(out), fmt.Sprintf("!Rep{%s}", val.TargetIdentifier), fmt.Sprintf("%.2f", val.Value.(float32)))
 		case []string:
 			joinedVal := strings.Join(val.Value.([]string), ", ")
-			out = strings.ReplaceAll(string(in), fmt.Sprintf("!Rep{%s}", val.TargetIdentifier), joinedVal)
+			out = strings.ReplaceAll(string(out), fmt.Sprintf("!Rep{%s}", val.TargetIdentifier), joinedVal)
 		}
 	}
 	return []byte(out)
+}
+
+func PlaceholdersLeft(in []byte) bool {
+	if strings.Contains(string(in), "!Rep{") {
+		return true
+	}
+	return false
 }
 
 func (r *AppReconciler) SetupWithManager(mgr ctrl.Manager) error {

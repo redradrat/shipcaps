@@ -18,9 +18,11 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -58,11 +60,15 @@ func (r *CapReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	mans := cap.Spec.Material.Manifests
-	for _, man := range mans {
+	unstruct := []unstructured.Unstructured{}
+	if err := json.Unmarshal(mans, &unstruct); err != nil {
+		return ctrl.Result{}, err
+	}
+	for _, man := range unstruct {
 		fmt.Println(fmt.Sprintf("Resource: %s | Name: %s", man.GroupVersionKind().String(), man.GetName()))
-		if err := r.Client.Create(ctx, &man, client.DryRunAll); err != nil {
-			return ctrl.Result{}, err
-		}
+		//if err := r.Client.Create(ctx, &man, client.DryRunAll); err != nil {
+		//	return ctrl.Result{}, err
+		//}
 	}
 
 	return ctrl.Result{}, nil

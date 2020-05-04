@@ -22,7 +22,6 @@ package v1beta1
 
 import (
 	"encoding/json"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -234,10 +233,8 @@ func (in *CapMaterial) DeepCopyInto(out *CapMaterial) {
 	in.Repo.DeepCopyInto(&out.Repo)
 	if in.Manifests != nil {
 		in, out := &in.Manifests, &out.Manifests
-		*out = make([]unstructured.Unstructured, len(*in))
-		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
-		}
+		*out = make(json.RawMessage, len(*in))
+		copy(*out, *in)
 	}
 }
 

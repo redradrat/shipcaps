@@ -21,7 +21,6 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // CapType specifies the type of a Cap. Used for identifying a backend.
@@ -129,7 +128,7 @@ type CapMaterial struct {
 
 	// Repo is specification of the git repository (GitOps y'all!)
 	//
-	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Optional
 	Repo RepoSpec `json:"repo"`
 
 	// Path specifies a subpath in the repo specified via repo
@@ -139,9 +138,8 @@ type CapMaterial struct {
 
 	// Manifests holds a list of manifests to use as material
 	//
-	// +kubebuilder:validation:XEmbeddedResource
 	// +kubebuilder:validation:Optional
-	Manifests []unstructured.Unstructured `json:"manifests,omitempty"`
+	Manifests json.RawMessage `json:"manifests,omitempty"`
 }
 
 // CapSpec defines the desired state of Cap

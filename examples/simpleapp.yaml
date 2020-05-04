@@ -1,0 +1,10 @@
+apiVersion: shipcaps.redradrat.xyz/v1beta1
+kind: App
+metadata:
+  name: namespaces
+  namespace: default
+spec:
+  capRef: namespaces
+  values:
+    - key: nsname
+      value: ralph

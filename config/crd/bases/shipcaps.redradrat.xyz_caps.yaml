@@ -100,9 +100,8 @@ spec:
               properties:
                 manifests:
                   description: Manifests holds a list of manifests to use as material
-                  items:
-                    type: object
-                  type: array
+                  format: byte
+                  type: string
                 path:
                   description: Path specifies a subpath in the repo specified via
                     repo
@@ -298,7 +297,6 @@ spec:
                     for material validation.
                   type: string
               required:
-              - repo
               - type
               type: object
             type:

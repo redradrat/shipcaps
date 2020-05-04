@@ -14,7 +14,15 @@ type CapValue struct {
 	Value interface{} `json:"value"`
 
 	// TransformationIdentifier identifies the replacement placeholder.
-	TargetIdentifier shipcapsv1beta1.TargetIdentifier `json:"targetId,omitempty"`
+	TargetIdentifier shipcapsv1beta1.TargetIdentifier `json:"targetId"`
+}
+
+func CapValueMap(vals []CapValue) map[string]interface{} {
+	outmap := make(map[string]interface{})
+	for _, entry := range vals {
+		outmap[string(entry.TargetIdentifier)] = entry.Value
+	}
+	return outmap
 }
 
 type AppValue struct {
@@ -42,7 +50,7 @@ func MergedCapValues(cap shipcapsv1beta1.Cap, app shipcapsv1beta1.App, log logr.
 	if app.Spec.Values != nil {
 		log.V(1).Info("unmarshaling string...")
 		log.V(1).Info(string(app.Spec.Values))
-		if err := json.Unmarshal(app.Spec.Values , &avu); err != nil {
+		if err := json.Unmarshal(app.Spec.Values, &avu); err != nil {
 			return nil, err
 		}
 	}
@@ -131,7 +139,6 @@ func (cu *CapValueUnmarshaler) UnmarshalJSON(b []byte) error {
 	cu.Data = umList
 	return nil
 }
-
 
 func (cu *AppValueUnmarshaler) UnmarshalJSON(b []byte) error {
 	umList := []AppValue{}
