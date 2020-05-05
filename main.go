@@ -27,9 +27,11 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	shipcapsv1beta1 "github.com/redradrat/shipcaps/api/v1beta1"
 	"github.com/redradrat/shipcaps/controllers"
+	"github.com/redradrat/shipcaps/webhooks"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -52,11 +54,14 @@ func main() {
 	var metricsAddr string
 	var requeueInterval string
 	var enableLeaderElection bool
+	var webhooksDisabled bool
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&requeueInterval, "requeue-interval", "1m", "The interval after wich to requeue the app. (see https://godoc.org/time#ParseDuration)")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	flag.BoolVar(&webhooksDisabled, "disable-webhooks", true,
+		"Disable the webhook registration. (Local dev purposes)")
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
@@ -97,7 +102,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	//mgr.GetWebhookServer().Register(webhooks.AppValidatorPath, &webhook.Admission{Handler: &webhooks.AppValidator{Client: mgr.GetClient()}})
+	if !webhooksDisabled {
+		mgr.GetWebhookServer().Register(webhooks.AppValidatorPath, &webhook.Admission{Handler: &webhooks.AppValidator{Client: mgr.GetClient()}})
+	}
 
 	// +kubebuilder:scaffold:builder
 

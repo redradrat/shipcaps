@@ -41,20 +41,27 @@ func AppValuesMap(values []AppValue) (map[string]interface{}, error) {
 	return outmap, nil
 }
 
+func UnmarshalAppValues(in json.RawMessage) ([]AppValue, error) {
+	avu := AppValueUnmarshaler{}
+	if in != nil {
+		if err := json.Unmarshal(in, &avu); err != nil {
+			return nil, err
+		}
+	}
+	return avu.Data, nil
+}
+
 // MergedCapValues returns the definitive list of CapValues resulting from matching CapInputs and AppValues and the
 // provided CapValues.
 func MergedCapValues(cap shipcapsv1beta1.Cap, app shipcapsv1beta1.App, log logr.Logger) ([]CapValue, error) {
 	var outlist []CapValue
 
-	avu := AppValueUnmarshaler{}
-	if app.Spec.Values != nil {
-		log.V(1).Info(fmt.Sprintf("unmarshaling string %s", string(app.Spec.Values)))
-		if err := json.Unmarshal(app.Spec.Values, &avu); err != nil {
-			return nil, err
-		}
+	avs, err := UnmarshalAppValues(app.Spec.Values)
+	if err != nil {
+		return nil, err
 	}
 
-	mergedAppValues, err := MergeAppValues(cap.Spec.Inputs, avu.Data)
+	mergedAppValues, err := MergeAppValues(cap.Spec.Inputs, avs)
 	if err != nil {
 		return nil, err
 	}
