@@ -5,7 +5,7 @@
 </p>
 
 A meta layer for kubernetes applications. Shipcaps provides a meta layer over various awsome packaging tools and projects. 
-With our Custom Resources, we represent *providing* ("Cap") a kubernetes application, and *using* ("App") a kubernetes application in a 
+With our Custom Resources, we represent *providing* ("[Cap](#cap-capability)") a kubernetes application, and *using* ("[App](#app-application)") a kubernetes application in a 
 normalized fashion. We embrace kubernetes' ecosystem diversity and are normalizing operations with various existing 
 tools and do not aim to replace them.
 
