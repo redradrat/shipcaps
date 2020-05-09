@@ -16,8 +16,8 @@ spec:
       - apiVersion: v1
         kind: Namespace
         metadata:
-          name: "{{ .teststring }}"
+          name: "{{ teststring }}"
       - apiVersion: v1
         kind: Namespace
         metadata:
-          name: "{{ .namespacename }}"
+          name: "{{ namespacename }}"

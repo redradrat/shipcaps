@@ -1,12 +1,10 @@
 package v1beta1
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"html/template"
+	"regexp"
 
-	"github.com/Masterminds/sprig"
 	"github.com/redradrat/shipcaps/errors"
 	"github.com/redradrat/shipcaps/parsing"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -74,23 +72,76 @@ func (cap *Cap) RenderValues(app *App) (parsing.CapValues, error) {
 
 func (source *CapSource) GetUnstructuredObjects(values parsing.CapValues) (unstructured.UnstructuredList, error) {
 	uList := unstructured.UnstructuredList{}
-	tpl, err := template.New("source").Funcs(sprig.FuncMap()).Parse(string(source.InLine))
-	if err != nil {
+	var parseMap []map[string]interface{}
+
+	if err := json.Unmarshal(source.InLine, &parseMap); err != nil {
 		return uList, err
 	}
 
-	var buf bytes.Buffer
-	if err := tpl.Execute(&buf, values.Map()); err != nil {
-		return uList, err
+	for _, manifest := range parseMap {
+		unstruct := unstructured.Unstructured{}
+		unstruct.SetUnstructuredContent(ReplacePlaceholders(manifest, values))
+		uList.Items = append(uList.Items, unstruct)
 	}
 
-	renderedJson := buf.Bytes()
-	newparsed := unstructured.UnstructuredList{}
-	if err := json.Unmarshal(renderedJson, &newparsed.Items); err != nil {
-		return uList, err
+	return uList, nil
+}
+
+func RemarshalAndReplacePlaceholders(in json.RawMessage, vals parsing.CapValues) (map[string]interface{}, error) {
+	var parseMap map[string]interface{}
+
+	if err := json.Unmarshal(in, &parseMap); err != nil {
+		return nil, err
 	}
 
-	return newparsed, nil
+	return ReplacePlaceholders(parseMap, vals), nil
+}
+
+// ReplacePlaceholder takes a map and replaces any found placeholder string values with arbitrary values
+func ReplacePlaceholders(in map[string]interface{}, vals parsing.CapValues) map[string]interface{} {
+	out := make(map[string]interface{})
+	// Iterate through the whole map
+	for key, value := range in {
+		// Let's check which type our value is
+		switch value.(type) {
+		case string:
+			// If our value is a placeholder string, then replace the whole value with what we get
+			// from our CapValues. If it's not a Placeholder, we keep the value in place.
+			if id, ok := Placeholder(value.(string)); ok {
+				out[key] = vals.Map()[id]
+			} else {
+				out[key] = value
+			}
+		case map[string]interface{}:
+			// If our value is another map[string]interface{}, then onwards into the rabbit hole.
+			out[key] = ReplacePlaceholders(value.(map[string]interface{}), vals)
+		default:
+			// In all other cases, we just leave the value be.
+			out[key] = value
+		}
+	}
+	return out
+}
+
+const PlaceholderRegex = `(?m){{\s+(\S*)\s*}}`
+
+// Placeholder checks a string input whether it is a placeholder, and returns the id of it if true
+func Placeholder(in string) (string, bool) {
+	rgx := regexp.MustCompile(PlaceholderRegex)
+	if !rgx.MatchString(in) {
+		return "", false
+	}
+
+	// Now let's get our id
+	ph := rgx.FindStringSubmatch(in)[1]
+	// If we didn't find a string, then the input was not a placeholder
+	if ph == "" {
+		// No string found, return false
+		return ph, false
+	}
+
+	// We got our string, so we're positive.
+	return ph, true
 }
 
 // IsInLine returns true if the

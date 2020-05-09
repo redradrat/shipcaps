@@ -126,6 +126,9 @@ func (r *AppReconciler) ReconcileSimpleCapTypeApp(src shipcapsv1beta1.CapSource,
 	var processedOut unstructured.UnstructuredList
 	if src.IsInLine() {
 		processedOut, err = src.GetUnstructuredObjects(capValues)
+		if err != nil {
+			return err
+		}
 	}
 
 	for _, entry := range processedOut.Items {
