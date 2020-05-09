@@ -87,6 +87,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err = (&controllers.CapDepReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("CapDep"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "CapDep")
+		os.Exit(1)
+	}
+
 	parsedInterval, err := time.ParseDuration(requeueInterval)
 	if err != nil {
 		setupLog.Error(err, "unable to parse requeue interval", "controller", "App")
@@ -105,7 +114,6 @@ func main() {
 	if !webhooksDisabled {
 		mgr.GetWebhookServer().Register(webhooks.AppValidatorPath, &webhook.Admission{Handler: &webhooks.AppValidator{Client: mgr.GetClient()}})
 	}
-
 	// +kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")

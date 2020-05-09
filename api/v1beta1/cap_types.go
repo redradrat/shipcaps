@@ -149,7 +149,7 @@ type CapSpec struct {
 	// Dependencies specify Apps that this App depends on
 	//
 	// +kubebuilder:validation:Optional
-	Dependencies v1.ObjectReference `json:"dependencies,omitempty"`
+	Dependencies []v1.ObjectReference `json:"dependencies,omitempty"`
 }
 
 // CapStatus defines the observed state of Cap

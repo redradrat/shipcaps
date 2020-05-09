@@ -21,3 +21,5 @@ spec:
         kind: Namespace
         metadata:
           name: "{{ namespacename }}"
+  dependencies:
+    - name: namespaces

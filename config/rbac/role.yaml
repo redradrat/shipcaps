@@ -29,6 +29,26 @@ rules:
 - apiGroups:
   - shipcaps.redradrat.xyz
   resources:
+  - capdeps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - shipcaps.redradrat.xyz
+  resources:
+  - capdeps/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - shipcaps.redradrat.xyz
+  resources:
   - caps
   verbs:
   - create

@@ -58,12 +58,44 @@ func (r *AppReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}, client.IgnoreNotFound(err)
 	}
 
+	// Get the referenced Cap
 	cap := shipcapsv1beta1.Cap{}
 	err = r.Client.Get(ctx, client.ObjectKey{Name: app.Spec.CapRef}, &cap)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
+	// Get the required CapDeps
+	var capdeps []shipcapsv1beta1.CapDep
+	for _, dep := range cap.Spec.Dependencies {
+		capdep := shipcapsv1beta1.CapDep{}
+		err = r.Client.Get(ctx, client.ObjectKey{Name: dep.Name}, &capdep)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		capdeps = append(capdeps, capdep)
+	}
+
+	// Reconcile the Dependencies for this App
+	for _, dep := range capdeps {
+		depValues, err := dep.RenderValues()
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+
+		switch dep.Spec.Source.Type {
+		case shipcapsv1beta1.SimpleCapSourceType:
+			if err := r.ReconcileSimpleCapTypeApp(dep.Spec.Source, &app, depValues, ctx, log); err != nil {
+				return ctrl.Result{}, err
+			}
+		case shipcapsv1beta1.HelmChartCapSourceType:
+			if err := r.ReconcileHelmChartCapTypeApp(dep.Spec.Source, app, depValues, ctx, log); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	}
+
+	// Reconcile the App itself
 	capValues, err := cap.RenderValues(&app)
 	if err != nil {
 		return ctrl.Result{}, err

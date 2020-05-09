@@ -87,16 +87,6 @@ func (source *CapSource) GetUnstructuredObjects(values parsing.CapValues) (unstr
 	return uList, nil
 }
 
-func RemarshalAndReplacePlaceholders(in json.RawMessage, vals parsing.CapValues) (map[string]interface{}, error) {
-	var parseMap map[string]interface{}
-
-	if err := json.Unmarshal(in, &parseMap); err != nil {
-		return nil, err
-	}
-
-	return ReplacePlaceholders(parseMap, vals), nil
-}
-
 // ReplacePlaceholder takes a map and replaces any found placeholder string values with arbitrary values
 func ReplacePlaceholders(in map[string]interface{}, vals parsing.CapValues) map[string]interface{} {
 	out := make(map[string]interface{})

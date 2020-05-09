@@ -19,6 +19,8 @@ Table of Contents
     * [Values](#values)
     * [Source](#source)
        * [Types](#types)
+    * [Dependencies](#dependencies)
+ * [CapDep ("Capability Dependency")](#capdep-capability-dependency)
  * [App ("Application")](#app-application)
 
 ## Idea
@@ -75,13 +77,29 @@ In Shipcaps we're dealing with 2 different kinds. A `Cap` as in "Capability", an
 
 ### Cap ("Capability")
 
-See [examples/testcap.yaml](./examples/testcap.yaml).
+See [examples/simplecap.yaml](./examples/simplecap.yaml).
 
 A `Cap` defines a packaged kubernetes application. This can be a couple of manifests with maybe a couple of 
 placeholder-values for environment-specific config, or a Helm Chart checked into some common git repository I want to 
-feed some custom values to, or something entirely different.
+feed some custom values to, or something entirely different. Caps are cluster-wide.
 
 With a `Cap` you can refer to a source and define what inputs it still needs on instatiation and define additional values.
+
+Usage:
+```yaml
+apiVersion: shipcaps.redradrat.xyz/v1beta1
+kind: Cap
+metadata:
+  name: acme-es
+spec:
+  inputs: # Inputs are defined here
+  values: # Values are defined here
+  source:
+    type: __TYPE_GOES_HERE__
+    ...
+  dependencies: # Dependencies are defined here
+    ...
+```
 
 #### Inputs
 
@@ -150,19 +168,6 @@ spec:
       ...
 ```
 
-Usage:
-```yaml
-apiVersion: shipcaps.redradrat.xyz/v1beta1
-kind: Cap
-metadata:
-  name: acme-es
-spec:
-  ...
-  source:
-    type: __TYPE_GOES_HERE__
-    ...
-```
-
 ##### Types
 
 There are various different *types* of sources. They all represent different ways of templating, generating or otherwise 
@@ -202,9 +207,37 @@ The `helmchart` Cap type refers to a helm chart and allows to defines a set of i
 Supported sources:
 * repo
 
+#### Dependencies
+
+A Cap can also define a list of dependencies `CapDeps`, that serve as prerequesites for the described package. The 
+defined [`CapDep`] sources will be rendered and applied before the actual `Cap` source.
+
+A use-case for this could be: Deploying an operator (defined via `CapDep`) before deploying a CustomResource (defined 
+as `Cap`). 
+
+### CapDep ("Capability Dependency")
+
+See [examples/simplecapdep.yaml](./examples/simplecapdep.yaml)
+
+A `CapDep` defines a set of sources that serve as prerequisites of a `Cap`. It defines a source package and values it 
+requires. CapDeps are cluster-wide.
+
+Usage:
+```yaml
+apiVersion: shipcaps.redradrat.xyz/v1beta1
+kind: CapDep
+metadata:
+  name: acme-es-operator
+spec:
+  values: # Values are defined here
+  source:
+    type: __TYPE_GOES_HERE__
+    ...
+```
+
 ### App ("Application")
 
-See [examples/testapp.yaml](./examples/testapp.yaml)
+See [examples/simpleapp.yaml](./examples/simpleapp.yaml)
 
 An `App` defines an instance of a `Cap`. It references the `Cap` and defines the values it requires. After being 
 reconciled by the shipcaps operator, the application will be usable.

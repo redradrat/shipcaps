@@ -6,20 +6,18 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.5
   creationTimestamp: null
-  name: caps.shipcaps.redradrat.xyz
+  name: capdeps.shipcaps.redradrat.xyz
 spec:
   group: shipcaps.redradrat.xyz
   names:
-    kind: Cap
-    listKind: CapList
-    plural: caps
-    shortNames:
-    - cap
-    singular: cap
+    kind: CapDep
+    listKind: CapDepList
+    plural: capdeps
+    singular: capdep
   scope: Cluster
   validation:
     openAPIV3Schema:
-      description: Cap is the Schema for the caps API
+      description: CapDep is the Schema for the capdeps API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -34,72 +32,8 @@ spec:
         metadata:
           type: object
         spec:
-          description: CapSpec defines the desired state of Cap
+          description: CapDepSpec defines the desired state of CapDep
           properties:
-            dependencies:
-              description: Dependencies specify Apps that this App depends on
-              items:
-                description: ObjectReference contains enough information to let you
-                  inspect or modify the referred object.
-                properties:
-                  apiVersion:
-                    description: API version of the referent.
-                    type: string
-                  fieldPath:
-                    description: 'If referring to a piece of an object instead of
-                      an entire object, this string should contain a valid JSON/Go
-                      field access statement, such as desiredState.manifest.containers[2].
-                      For example, if the object reference is to a container within
-                      a pod, this would take on a value like: "spec.containers{name}"
-                      (where "name" refers to the name of the container that triggered
-                      the event) or if no container name is specified "spec.containers[2]"
-                      (container with index 2 in this pod). This syntax is chosen
-                      only to have some well-defined way of referencing a part of
-                      an object. TODO: this design is not final and this field is
-                      subject to change in the future.'
-                    type: string
-                  kind:
-                    description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                    type: string
-                  name:
-                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                    type: string
-                  namespace:
-                    description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
-                    type: string
-                  resourceVersion:
-                    description: 'Specific resourceVersion to which this reference
-                      is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
-                    type: string
-                  uid:
-                    description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
-                    type: string
-                type: object
-              type: array
-            inputs:
-              description: Inputs specify all Inputs that can be given to our Cap
-              items:
-                description: CapInput defines an Input required for our Cap
-                properties:
-                  key:
-                    type: string
-                  optional:
-                    description: Optional identifies whether this Input is required
-                      or not
-                    type: boolean
-                  targetId:
-                    description: TransformationIdentifier identifies the replacement
-                      placeholder.
-                    type: string
-                  type:
-                    description: Type identifies the type of the this input (string,
-                      int, ...). Used for parsing.
-                    type: string
-                required:
-                - key
-                - type
-                type: object
-              type: array
             source:
               description: Source is an object reference to the required CapSource
               properties:
@@ -319,7 +253,7 @@ spec:
           - source
           type: object
         status:
-          description: CapStatus defines the observed state of Cap
+          description: CapDepStatus defines the observed state of CapDep
           properties:
             observedGeneration:
               description: ObservedGeneration holds the generation (metadata.generation

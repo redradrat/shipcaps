@@ -1,0 +1,15 @@
+apiVersion: shipcaps.redradrat.xyz/v1beta1
+kind: CapDep
+metadata:
+  name: namespaces
+spec:
+  values:
+    - value: "dep"
+      targetId: depnsname
+  source:
+    type: simple
+    inline:
+      - apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: "{{ depnsname }}"

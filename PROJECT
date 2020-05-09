@@ -10,4 +10,7 @@ resources:
 - group: shipcaps
   kind: CapMaterial
   version: v1beta1
+- group: shipcaps
+  kind: CapDep
+  version: v1beta1
 version: "2"
