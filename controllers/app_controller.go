@@ -44,6 +44,10 @@ type AppReconciler struct {
 
 // +kubebuilder:rbac:groups=shipcaps.redradrat.xyz,resources=apps,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=shipcaps.redradrat.xyz,resources=apps/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=shipcaps.redradrat.xyz,resources=caps,verbs=get;list;watch
+// +kubebuilder:rbac:groups=shipcaps.redradrat.xyz,resources=caps/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=shipcaps.redradrat.xyz,resources=capdeps,verbs=get;list;watch
+// +kubebuilder:rbac:groups=shipcaps.redradrat.xyz,resources=capdeps/status,verbs=get;update;patch
 
 func (r *AppReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()

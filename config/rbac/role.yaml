@@ -66,3 +66,11 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - shipcaps.redradrat.xyz
+  resources:
+  - capsdeps/status
+  verbs:
+  - get
+  - patch
+  - update

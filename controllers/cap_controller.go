@@ -39,6 +39,8 @@ type CapReconciler struct {
 
 // +kubebuilder:rbac:groups=shipcaps.redradrat.xyz,resources=caps,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=shipcaps.redradrat.xyz,resources=caps/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=shipcaps.redradrat.xyz,resources=capdeps,verbs=get;list;watch
+// +kubebuilder:rbac:groups=shipcaps.redradrat.xyz,resources=capsdeps/status,verbs=get;update;patch
 
 func (r *CapReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
