@@ -3,7 +3,6 @@ kind: Cap
 metadata:
   name: test
 spec:
-  type: helmchart
   inputs:
     - key: ingressClass
       type: string
@@ -11,14 +10,9 @@ spec:
   values:
     - value: anotherone
       targetId: helloworld.service.testValue
-  material:
-    type: repo
+  source:
+    type: helmchart
     repo:
       uri: https://github.com/stakater-charts/helloworld
       path: helloworld
       ref: master
-    manifests:
-    - apiVersion: v1
-      kind: Namespace
-      metadata:
-        name: test

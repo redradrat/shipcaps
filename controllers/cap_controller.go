@@ -45,8 +45,7 @@ func (r *CapReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("cap", req.NamespacedName)
 
 	var cap shipcapsv1beta1.Cap
-	err := r.Get(ctx, req.NamespacedName, &cap)
-	if err != nil {
+	if err := r.Get(ctx, req.NamespacedName, &cap); err != nil {
 		log.V(1).Info("unable to fetch Cap")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -59,16 +58,20 @@ func (r *CapReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		r.Status().Update(ctx, &cap)
 	}
 
-	mans := cap.Spec.Material.Manifests
-	unstruct := []unstructured.Unstructured{}
-	if err := json.Unmarshal(mans, &unstruct); err != nil {
-		return ctrl.Result{}, err
-	}
-	for _, man := range unstruct {
-		fmt.Println(fmt.Sprintf("Resource: %s | Name: %s", man.GroupVersionKind().String(), man.GetName()))
-		//if err := r.Client.Create(ctx, &man, client.DryRunAll); err != nil {
-		//	return ctrl.Result{}, err
-		//}
+	src := cap.Spec.Source
+
+	if src.IsInLine() {
+		mans := src.InLine
+		unstruct := []unstructured.Unstructured{}
+		if err := json.Unmarshal(mans, &unstruct); err != nil {
+			return ctrl.Result{}, err
+		}
+		for _, man := range unstruct {
+			fmt.Println(fmt.Sprintf("Resource: %s | Name: %s", man.GroupVersionKind().String(), man.GetName()))
+			//if err := r.Client.Create(ctx, &man, client.DryRunAll); err != nil {
+			//	return ctrl.Result{}, err
+			//}
+		}
 	}
 
 	return ctrl.Result{}, nil

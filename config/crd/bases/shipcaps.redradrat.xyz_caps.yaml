@@ -96,17 +96,12 @@ spec:
                 - type
                 type: object
               type: array
-            material:
-              description: Matter specifies the matter of the specified type (helm
-                chart, manifests, etc.)
+            source:
+              description: Source is an object reference to the required CapSource
               properties:
-                manifests:
-                  description: Manifests holds a list of manifests to use as material
+                inline:
+                  description: InLine holds a list of manifests to use as material
                   format: byte
-                  type: string
-                path:
-                  description: Path specifies a subpath in the repo specified via
-                    repo
                   type: string
                 repo:
                   description: Repo is specification of the git repository (GitOps
@@ -289,8 +284,7 @@ spec:
                       - username
                       type: object
                     path:
-                      description: Path specifies a path a chart can be found at in
-                        this repo
+                      description: Path specifies a subpath in the repo
                       type: string
                     ref:
                       description: Ref specifies a GitRef to use for the repo
@@ -303,24 +297,22 @@ spec:
                   - uri
                   type: object
                 type:
-                  description: Type is specification of the material type. Needed
-                    for material validation.
+                  description: Type specifies the type of to our Cap (e.g. what is
+                    our backend? Helm, Manifests, ...)
+                  enum:
+                  - helmchart
+                  - simple
                   type: string
               required:
               - type
               type: object
-            type:
-              description: Type specifies the type of to our Cap (e.g. what is our
-                backend? Helm, Manifests, ...)
-              type: string
             values:
               description: Values allows to specify provided values. This can reduce
                 user choice when using a Helm Chart for example.
               format: byte
               type: string
           required:
-          - material
-          - type
+          - source
           type: object
         status:
           description: CapStatus defines the observed state of Cap

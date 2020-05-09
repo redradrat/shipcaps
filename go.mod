@@ -3,6 +3,7 @@ module github.com/redradrat/shipcaps
 go 1.13
 
 require (
+	github.com/Masterminds/sprig v0.0.0-20190301161902-9f8fceff796f
 	github.com/aws/aws-sdk-go v1.27.4
 	github.com/fluxcd/helm-operator v1.0.0-rc6
 	github.com/go-logr/logr v0.1.0

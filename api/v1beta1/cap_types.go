@@ -21,17 +21,8 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
 
-// CapType specifies the type of a Cap. Used for identifying a backend.
-type CapType string
-
-const (
-	// SimpleCapType is a simple value-replacement Cap
-	SimpleCapType CapType = "simple"
-
-	// HelmChartCapType abstracts a Helm Chart as a Cap
-	HelmChartCapType CapType = "helmchart"
+	"github.com/redradrat/shipcaps/parsing"
 )
 
 // ValueType specifies the type of an Input. Used for parsing.
@@ -67,16 +58,14 @@ type CapInput struct {
 	// TransformationIdentifier identifies the replacement placeholder.
 	//
 	// +kubebuilder:validation:Optional
-	TargetIdentifier TargetIdentifier `json:"targetId,omitempty"`
+	TargetIdentifier parsing.TargetIdentifier `json:"targetId,omitempty"`
 }
-
-type TargetIdentifier string
 
 // CapInputs is a list of CapInputs
 type CapInputs []CapInput
 
-// MaterialAuth references authentication credentials for a Helm Chart Repo
-type MaterialAuth struct {
+// RepoAuth references authentication credentials for a Helm Chart Repo
+type RepoAuth struct {
 	// Username is the username to authenticate with for the Repository
 	//
 	// +kubebuilder:validation:Required
@@ -100,7 +89,7 @@ type RepoSpec struct {
 	// +kubebuilder:validation:Optional
 	Ref string `json:"ref,omitempty"`
 
-	// Path specifies a path a chart can be found at in this repo
+	// Path specifies a subpath in the repo
 	//
 	// +kubebuilder:validation:Optional
 	Path string `json:"path,omitempty"`
@@ -108,48 +97,40 @@ type RepoSpec struct {
 	// Auth potentially needed authentication credentials for the referenced material
 	//
 	// +kubebuilder:validation:Optional
-	Auth MaterialAuth `json:"auth,omitempty"`
+	Auth RepoAuth `json:"auth,omitempty"`
 }
 
-type MaterialType string
+// CapSourceType specifies the type of a Cap. Used for identifying a backend.
+type CapSourceType string
 
 const (
-	ManifestsMaterialType MaterialType = "manifests"
-	RepoMaterialType      MaterialType = "repo"
+	// SimpleCapSourceType is a simple value-replacement Cap
+	SimpleCapSourceType CapSourceType = "simple"
+
+	// HelmChartCapSourceType abstracts a Helm Chart as a Cap
+	HelmChartCapSourceType CapSourceType = "helmchart"
 )
 
-// CapMaterial is a the material of the respective supported types
-type CapMaterial struct {
-
-	// Type is specification of the material type. Needed for material validation.
+type CapSource struct {
+	// Type specifies the type of to our Cap (e.g. what is our backend? Helm, Manifests, ...)
 	//
 	// +kubebuilder:validation:Required
-	Type MaterialType `json:"type"`
+	// +kubebuilder:validation:Enum=helmchart;simple
+	Type CapSourceType `json:"type"`
 
 	// Repo is specification of the git repository (GitOps y'all!)
 	//
 	// +kubebuilder:validation:Optional
 	Repo RepoSpec `json:"repo"`
 
-	// Path specifies a subpath in the repo specified via repo
+	// InLine holds a list of manifests to use as material
 	//
 	// +kubebuilder:validation:Optional
-	Path string `json:"path,omitempty"`
-
-	// Manifests holds a list of manifests to use as material
-	//
-	// +kubebuilder:validation:Optional
-	Manifests json.RawMessage `json:"manifests,omitempty"`
+	InLine json.RawMessage `json:"inline,omitempty"`
 }
 
 // CapSpec defines the desired state of Cap
 type CapSpec struct {
-
-	// Type specifies the type of to our Cap (e.g. what is our backend? Helm, Manifests, ...)
-	//
-	// +kubebuilder:validation:Required
-	Type CapType `json:"type"`
-
 	// Inputs specify all Inputs that can be given to our Cap
 	//
 	// +kubebuilder:validation:Optional
@@ -160,10 +141,10 @@ type CapSpec struct {
 	// +kubebuilder:validation:Optional
 	Values json.RawMessage `json:"values,omitempty"`
 
-	// Matter specifies the matter of the specified type (helm chart, manifests, etc.)
+	// Source is an object reference to the required CapSource
 	//
 	// +kubebuilder:validation:Required
-	Material CapMaterial `json:"material"`
+	Source CapSource `json:"source"`
 
 	// Dependencies specify Apps that this App depends on
 	//

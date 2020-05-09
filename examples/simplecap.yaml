@@ -3,7 +3,6 @@ kind: Cap
 metadata:
   name: namespaces
 spec:
-  type: simple
   inputs:
     - key: nsname
       type: string
@@ -11,14 +10,14 @@ spec:
   values:
     - value: "teststring"
       targetId: teststring
-  material:
-    type: manifests
-    manifests:
+  source:
+    type: simple
+    inline:
       - apiVersion: v1
         kind: Namespace
         metadata:
-          name: "!Rep{teststring}"
+          name: "{{ .teststring }}"
       - apiVersion: v1
         kind: Namespace
         metadata:
-          name: "!Rep{namespacename}"
+          name: "{{ .namespacename }}"

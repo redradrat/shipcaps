@@ -12,16 +12,14 @@ tools and do not aim to replace them.
 Table of Contents
 =================
 
-  * [Idea](#idea)
-  * [Design](#design)
-     * [Cap ("Capability")](#cap-capability)
-        * [Material](#material)
-           * [repo](#repo)
-           * [manifests](#manifests)
-        * [Types](#types)
-           * [simple](#simple)
-           * [helmchart](#helmchart)
-     * [App ("Application")](#app-application)
+* [Idea](#idea)
+* [Design](#design)
+ * [Cap ("Capability")](#cap-capability)
+    * [Inputs](#inputs)
+    * [Values](#values)
+    * [Source](#source)
+       * [Types](#types)
+ * [App ("Application")](#app-application)
 
 ## Idea
 
@@ -77,33 +75,30 @@ In Shipcaps we're dealing with 2 different kinds. A `Cap` as in "Capability", an
 
 ### Cap ("Capability")
 
-See [examples/helmcap.yaml](./examples/helmcap.yaml).
+See [examples/testcap.yaml](./examples/testcap.yaml).
 
 A `Cap` defines a packaged kubernetes application. This can be a couple of manifests with maybe a couple of 
 placeholder-values for environment-specific config, or a Helm Chart checked into some common git repository I want to 
 feed some custom values to, or something entirely different.
 
-With a `Cap` you can refer to a package and define what inputs it needs.
+With a `Cap` you can refer to a source and define what inputs it still needs on instatiation and define additional values.
 
-#### Material
+#### Inputs
 
-Each Cap refers to underlying material. Again, this project does not aim to replace existing tooling but only be an 
+Inputs define a set of values the will have to be given, when creating an [`App`](#app-application) from this `Cap`.
+
+#### Values
+
+Values define a set of values the will be passed on to render the defined source. Most probably used for defaulting.
+
+#### Source
+
+Each Cap refers to underlying source, which represents a packaged kubernetes deployment. Again, this project does not aim to replace existing tooling but only be an 
 abstraction of "value in, application out" usecases.
 
-Usage:
-```yaml
-apiVersion: shipcaps.redradrat.xyz/v1beta1
-kind: Cap
-metadata:
-  name: acme-es
-spec:
-  material: ## Here goes our material spec
-```
+There is multiple ways the underlying sources can be referred to:
 
-
-**Supported Material**:
-
-##### repo
+* repo
 
 The Git Repo material is really the embodyment of our GitOps strategy. With this material spec we can refer to an 
 existing git repo or a subdirectory in it, and expect our [type](#types)-specific sources at this location.
@@ -112,11 +107,11 @@ Usage:
 ```yaml
 ...
 spec:
-  ...
-  material:
+    type: ...
     repo:
       uri: https://github.com/redradrat/charts
       ref: v1.0
+      path: /elasticsearch
       auth:
         username:
           secretKeyRef:
@@ -126,42 +121,34 @@ spec:
           secretKeyRef:
             name: repoauth
             key: repo-password
-    path: /elasticsearch
 ```
 
-##### manifests
+* inline
 
-The manifests material spec is a quick-and-easy way to abstract a single or a couple of manifests into a Cap.
+The inline source spec is a quick-and-easy way to abstract a single or a couple of manifests into a Cap.
 
 Usage:
 ```yaml
 ...
 spec:
-  material:
-    ...
-    manifests:
-      - apiVersion: v1
-        kind: Namespace
-        metadata:
-        name: es
-      - apiVersion: elasticsearch.k8s.elastic.co/v1
-        kind: Elasticsearch
-        metadata:
-          name: my-elasticsearch
-          namespace: es
-        spec:
-          version: 7.6.2
-          nodeSets:
-          - name: default
-            count: 1
-          ...
+    type: ...
+    inline:
+    - apiVersion: v1
+    kind: Namespace
+    metadata:
+    name: es
+    - apiVersion: elasticsearch.k8s.elastic.co/v1
+    kind: Elasticsearch
+    metadata:
+      name: my-elasticsearch
+      namespace: es
+    spec:
+      version: 7.6.2
+      nodeSets:
+      - name: default
+        count: 1
+      ...
 ```
-
-#### Types
-
-There are various different *types* of Caps. They all represent different ways of templating, generating or otherwise 
-compinling manifests or input towards the kube-apiserver. With caps we just want to come up with a list of values to 
-pass on to our "backend", the actual tool used to generate.
 
 Usage:
 ```yaml
@@ -170,16 +157,32 @@ kind: Cap
 metadata:
   name: acme-es
 spec:
-  type: __TYPE_GOES_HERE__
-  inputs:
-    - key: mykey
-      ...
+  ...
+  source:
+    type: __TYPE_GOES_HERE__
+    ...
 ```
 
+##### Types
+
+There are various different *types* of sources. They all represent different ways of templating, generating or otherwise 
+compinling manifests or input towards the kube-apiserver. With caps we just want to come up with a list of values to 
+pass on to our "backend", the actual tool used to generate.
+
+Usage:
+```yaml
+apiVersion: shipcaps.redradrat.xyz/v1beta1
+kind: CapSource
+metadata:
+  name: acme-es
+spec:
+  type: __TYPE_GOES_HERE__
+  ...
+```
 
 **Supported types**:
 
-##### simple
+* simple
 
 The `simple` Cap type refers to plain kubernetes manifests enriched with simple placeholder-replacement functionality.
 
@@ -188,22 +191,20 @@ Usecases:
 * Operator Deployment coupled with CRDs
 * ...
 
-Supported material:
-* repo
-* manifests
+Supported sources:
+* inline
 
-##### helmchart
+* helmchart
 
 The `helmchart` Cap type refers to a helm chart and allows to defines a set of inputs. This type expects the the 
 [helm-operator](https://github.com/fluxcd/helm-operator/) to be available.
 
-Supported material:
+Supported sources:
 * repo
-
 
 ### App ("Application")
 
-See [examples/postgresapp.yaml](./examples/postgresapp.yaml)
+See [examples/testapp.yaml](./examples/testapp.yaml)
 
 An `App` defines an instance of a `Cap`. It references the `Cap` and defines the values it requires. After being 
 reconciled by the shipcaps operator, the application will be usable.

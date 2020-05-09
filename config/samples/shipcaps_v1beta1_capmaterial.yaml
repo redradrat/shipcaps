@@ -1,0 +1,7 @@
+apiVersion: shipcaps.redradrat.xyz/v1beta1
+kind: CapMaterial
+metadata:
+  name: capmaterial-sample
+spec:
+  # Add fields here
+  foo: bar
