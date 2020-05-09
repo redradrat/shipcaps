@@ -13,6 +13,8 @@ RUN go mod download
 COPY main.go main.go
 COPY api/ api/
 COPY controllers/ controllers/
+COPY errors/ errors/
+COPY parsing/ parsing/
 COPY webhooks/ webhooks/
 
 # Build
