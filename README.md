@@ -16,7 +16,7 @@ Table of Contents
 
   * [Idea](#idea)
   * [Design](#design)
-     * [Cap/ClusterCap ("Capability")](#capclustercap-capability)
+     * [Cap/ClusterCap ("Capability")](#capclustercapclustercap-capability)
         * [Inputs](#inputs)
         * [Values](#values)
         * [Source](#source)
@@ -32,7 +32,7 @@ Table of Contents
 ## Idea
 
 Shipcaps provides a meta layer over various awesome packaging tools and projects. With our Custom Resources, we 
-represent *providing* ("[Cap](#cap-capability)") a kubernetes application, and *using* ("[App](#app-application)") a 
+represent *providing* ("[Cap](#capclustercap-capability)") a kubernetes application, and *using* ("[App](#app-application)") a 
 kubernetes application in a normalized fashion. We embrace kubernetes' ecosystem diversity and normalize operations with
 various existing tools. **We don't aim to replace them.**
 
@@ -279,10 +279,10 @@ spec:
 #### Values
 
 An app can define values, that will be mapped with the required [inputs](#inputs) of the referenced 
-[Cap](#cap-capability). 
+[Cap](#capclustercap-capability). 
 
 A value consists of:
- * **key**: used to map with required [inputs](#inputs) in [Cap](#cap-capability))
+ * **key**: used to map with required [inputs](#inputs) in [Cap](#capclustercap-capability))
  * **value**: the actual value content (e.g. "string")
  
  ```yaml
