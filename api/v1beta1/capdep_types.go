@@ -44,7 +44,7 @@ type CapDepStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:path=capdeps,scope=Cluster
+// +kubebuilder:resource:path=capdeps
 
 // CapDep is the Schema for the capdeps API
 type CapDep struct {

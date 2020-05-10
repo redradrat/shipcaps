@@ -99,7 +99,7 @@ func (r *AppReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	var capdeps []shipcapsv1beta1.CapDep
 	for _, dep := range cap.Spec.Dependencies {
 		capdep := shipcapsv1beta1.CapDep{}
-		err = r.Client.Get(ctx, client.ObjectKey{Name: dep.Name}, &capdep)
+		err = r.Client.Get(ctx, client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}, &capdep)
 		if err != nil {
 			return ctrl.Result{}, err
 		}

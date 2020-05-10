@@ -2,6 +2,7 @@ apiVersion: shipcaps.redradrat.xyz/v1beta1
 kind: CapDep
 metadata:
   name: namespaces
+  namespace: default
 spec:
   values:
     - value: "dep"
