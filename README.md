@@ -75,15 +75,16 @@ In Shipcaps we're dealing with 2 different kinds. A `Cap` as in "Capability", an
 
 ![design](idea-sketch.png)
 
-### Cap ("Capability")
+### Cap/ClusterCap ("Capability")
 
 See [examples/simplecap.yaml](./examples/simplecap.yaml).
 
-A `Cap` defines a packaged kubernetes application. This can be a couple of manifests with maybe a couple of 
-placeholder-values for environment-specific config, or a Helm Chart checked into some common git repository I want to 
-feed some custom values to, or something entirely different. Caps are cluster-wide.
+A `Cap`/`ClusterCap`(cluster-wide; exactly same) defines a packaged kubernetes application. This can be a couple of 
+manifests with maybe a couple of placeholder-values for environment-specific config, or a Helm Chart checked into some 
+common git repository I want to feed some custom values to, or something entirely different. Caps are cluster-wide.
 
-With a `Cap` you can refer to a source and define what inputs it still needs on instatiation and define additional values.
+With a `Cap` you can refer to a source and define what inputs it still needs on instatiation and define additional 
+values.
 
 Usage:
 ```yaml
@@ -105,9 +106,42 @@ spec:
 
 Inputs define a set of values the will have to be given, when creating an [`App`](#app-application) from this `Cap`.
 
+An input consists of:
+ * **key**: used to map with provided values in [App](#app-application))
+ * **type**: used to validate and parse the content of a provided value
+    * `string`: The type of this input will be parsed as string (e.g. "string")
+    * `stringlist`: The type of this input will be parsed as a list of strings (e.g. ["string1", "string2"])
+    * `int`: The type of this input will be parsed as an integer (e.g. 42)
+    * `float`: The type of this input will be parsed as an float (e.g. 42.00)
+ * **targetId**: the id that will be available for rendering the underlying [source](#source) 
+
+```yaml
+spec:
+  inputs:
+    - key: nsname
+      type: string
+      targetId: namespacename
+  values:
+    - value: "teststring"
+      targetId: teststring
+  ...
+```
+
 #### Values
 
 Values define a set of values the will be passed on to render the defined source. Most probably used for defaulting.
+
+A value consists of :
+ * **targetId**: the id that this value will be available as, for rendering the underlying [source](#source) 
+ * **value**: the actual value content (e.g. "string")
+
+```yaml
+spec:
+  values:
+    - value: "teststring"
+      targetId: teststring
+  ...
+```
 
 #### Source
 
@@ -242,6 +276,8 @@ See [examples/simpleapp.yaml](./examples/simpleapp.yaml)
 An `App` defines an instance of a `Cap`. It references the `Cap` and defines the values it requires. After being 
 reconciled by the shipcaps operator, the application will be usable.
 
+`capRef` and `clusterCapRef` are not combinable. If you define both, and `capRef` will take precedence.
+
 Usage:
 ```yaml
 apiVersion: shipcaps.redradrat.xyz/v1beta1
@@ -250,9 +286,29 @@ metadata:
   name: myelastic
   namespace: here
 spec:
-  capRef: acme-es # This is a single string, as caps are cluster-wide
+  capRef: # Should not be defined if clusterCapRef is used
+    name: acme-es
+    namespace: caps
+  clusterCapRef: # Should not be defined if capRef is used
+    name: acme-es
   values:
     - key: dbname
       value: mydb
+```
 
+#### Values
+
+An app can define values, that will be mapped with the required [inputs](#inputs) of the referenced 
+[Cap](#cap-capability). 
+
+A value consists of:
+ * **key**: used to map with required [inputs](#inputs) in [Cap](#cap-capability))
+ * **value**: the actual value content (e.g. "string")
+ 
+ ```yaml
+spec:
+  ...
+  values:
+    - key: dbname
+      value: "mydbname"
 ```

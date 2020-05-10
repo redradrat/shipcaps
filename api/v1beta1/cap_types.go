@@ -31,8 +31,6 @@ type ValueType string
 const (
 	// StringInputType identifies an Input should be parsed as string
 	StringInputType ValueType = "string"
-	// PasswordInputType identifies an Input should be parsed as string but handled with care https://www.youtube.com/watch?v=1o4s1KVJaVA
-	PasswordInputType ValueType = "password"
 	// IntInputType identifies an Input should be parsed as int
 	IntInputType ValueType = "int"
 	// FloatInputType identifies an Input should be parsed as float

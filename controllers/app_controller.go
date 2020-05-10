@@ -62,11 +62,37 @@ func (r *AppReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}, client.IgnoreNotFound(err)
 	}
 
+	if app.Spec.ClusterCapRef != nil && app.Spec.CapRef != nil {
+		return ctrl.Result{}, fmt.Errorf("both ClusterCapRef and CapRef set")
+	}
+	if app.Spec.ClusterCapRef == nil && app.Spec.CapRef == nil {
+		return ctrl.Result{}, fmt.Errorf("neither ClusterCapRef nor CapRef set")
+	}
+
+	// Get the referenced ClusterCap
+	var cap shipcapsv1beta1.Cap
+	if app.Spec.ClusterCapRef != nil {
+		clusterCap := shipcapsv1beta1.ClusterCap{}
+		key := client.ObjectKey{
+			Name: app.Spec.ClusterCapRef.Name,
+		}
+		err = r.Client.Get(ctx, key, &clusterCap)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		cap = shipcapsv1beta1.Cap(clusterCap)
+	}
+
 	// Get the referenced Cap
-	cap := shipcapsv1beta1.Cap{}
-	err = r.Client.Get(ctx, client.ObjectKey{Name: app.Spec.CapRef}, &cap)
-	if err != nil {
-		return ctrl.Result{}, err
+	if app.Spec.CapRef != nil {
+		key := client.ObjectKey{
+			Namespace: app.Spec.CapRef.Namespace,
+			Name:      app.Spec.CapRef.Name,
+		}
+		err = r.Client.Get(ctx, key, &cap)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	// Get the required CapDeps

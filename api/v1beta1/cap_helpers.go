@@ -48,10 +48,6 @@ func (cap *Cap) RenderValues(app *App) (parsing.CapValues, error) {
 			if _, ok := data.(float32); !ok {
 				err = true
 			}
-		case PasswordInputType:
-			if _, ok := data.(string); !ok {
-				err = true
-			}
 		}
 		if err {
 			return nil, fmt.Errorf("required input '%s' is not of type '%s'", in.Key, in.Type)
