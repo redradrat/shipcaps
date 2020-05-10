@@ -4,26 +4,37 @@
 	<img src="logo.png" width="20%" align="center" alt="ExternalDNS">
 </p>
 
-**A meta layer for kubernetes application packages!** Shipcaps provides a meta layer over various awesome packaging 
-tools and projects. With our Custom Resources, we represent *providing* ("[Cap](#cap-capability)") a kubernetes 
-application, and *using* ("[App](#app-application)") a kubernetes application in a normalized fashion. We embrace 
-kubernetes' ecosystem diversity and normalize operations with various existing tools. **We don't aim to replace them.**
+**Provide different-looking kubernetes packages in a normalized fashion!**
+
+Shipcaps aims to be a **simple and accessible** tool for:
+    * kubernetes engineers to *provide* a kubernetes application (helm, kustomize, custom resrouces, ...)
+    * developers to *consume* a kubernetes application
+
 
 Table of Contents
 =================
 
-* [Idea](#idea)
-* [Design](#design)
- * [Cap ("Capability")](#cap-capability)
-    * [Inputs](#inputs)
-    * [Values](#values)
-    * [Source](#source)
-       * [Types](#types)
-    * [Dependencies](#dependencies)
- * [CapDep ("Capability Dependency")](#capdep-capability-dependency)
- * [App ("Application")](#app-application)
+  * [Idea](#idea)
+  * [Design](#design)
+     * [Cap/ClusterCap ("Capability")](#capclustercap-capability)
+        * [Inputs](#inputs)
+        * [Values](#values)
+        * [Source](#source)
+           * [Types](#types)
+        * [Dependencies](#dependencies)
+     * [CapDep ("Capability Dependency")](#capdep-capability-dependency)
+     * [App ("Application")](#app-application)
+        * [Values](#values-1)
+  * [Is Shipcaps for me?](#is-shipcaps-for-me)
+
+
 
 ## Idea
+
+Shipcaps provides a meta layer over various awesome packaging tools and projects. With our Custom Resources, we 
+represent *providing* ("[Cap](#cap-capability)") a kubernetes application, and *using* ("[App](#app-application)") a 
+kubernetes application in a normalized fashion. We embrace kubernetes' ecosystem diversity and normalize operations with
+various existing tools. **We don't aim to replace them.**
 
 Maintaining a kubernetes offering for any type of organisation can be a challange. In order to minimize the knowledge 
 required to run a service on kubernetes, a couple of tools emerge(d) to solve the problem of packaging Applications.
@@ -37,37 +48,6 @@ interface with our peers on our platforms that might not have this skillset.
 
 **The idea for *Shipcaps* is to separate the development, tuning and providing of kubernetes-native Applications
 and the usage/comsumption of packaged kubernetes applications by users in a normalized fashion.** 
-
-Scenario 1:
-In Acme, Corp. I want to provide a common platform for services for my product. Can I provide teams with a common way to
-get their dependencies? Do we need to get compliance/security clearance if Microservice A uses acme/postgres-chart and 
-Mircoservice B a postgres operator?
-
-Scenario 2:
-In Acme, Corp. we want to cut resource costs. As an SRE I'm currently going through all deployments and am streamlining 
-resource issues and autoscaling. I can only do that because I am efficient using 4 different packaging tools. Could this
-streamlining have been done by the users themselves? 
-
-Scenario 3:
-In Acme, Corp. we want a constant overview over deployments for compliance and security reasons. How does this inventory
-look like? Can I just list all currently running applications, and inspect their parts if an audit comes? GitOps maybe? 
-
-Scenario 4:
-In Acme, Corp. we want to allocate team's budgets based on whether they provide value for other teams. Team A plans to 
-create a custom postgres chart. Team B, C, D and E need postgres too. Do I have to pay for development if I'm managing 
-Team A? Can I relay development costs to thos other teams somehow? 
-
-Scenario 5:
-In Acme, Corp. we want to have one or more repositories of kubernetes-native applications, goverened by a distributed
-body. Do I have a corporate-wide registry of them? I might have a couple of helm chart registries, and a couple of 
-common kustomize repos. But utilizing it, I still need some domain knowledge to utilize and explore those. Is there a 
-technical representation for this, that I can act upon and inventorize?
-
-**Conclusion**
-
-Those are **awesome** scenarios already. We're getting stuff done in potentially cross-functioning teams, and we're 
-packaging clusters of kubernetes resources into logical units, We're even going towards having a single source of truth 
-with little magic between commit and deployment! Arriving here means you're probably already doing loads of cool stuff.
 
 ## Design
 
@@ -312,3 +292,38 @@ spec:
     - key: dbname
       value: "mydbname"
 ```
+
+## Is Shipcaps for me?
+
+Well, *maybe*:
+
+Scenario 1:
+In Acme, Corp. I want to provide a common platform for services for my product. Can I provide teams with a common way to
+get their dependencies? Do we need to get compliance/security clearance if Microservice A uses acme/postgres-chart and 
+Mircoservice B a postgres operator?
+
+Scenario 2:
+In Acme, Corp. we want to cut resource costs. As an SRE I'm currently going through all deployments and am streamlining 
+resource issues and autoscaling. I can only do that because I am efficient using 4 different packaging tools. Could this
+streamlining have been done by the users themselves? 
+
+Scenario 3:
+In Acme, Corp. we want a constant overview over deployments for compliance and security reasons. How does this inventory
+look like? Can I just list all currently running applications, and inspect their parts if an audit comes? GitOps maybe? 
+
+Scenario 4:
+In Acme, Corp. we want to allocate team's budgets based on whether they provide value for other teams. Team A plans to 
+create a custom postgres chart. Team B, C, D and E need postgres too. Do I have to pay for development if I'm managing 
+Team A? Can I relay development costs to thos other teams somehow? 
+
+Scenario 5:
+In Acme, Corp. we want to have one or more repositories of kubernetes-native applications, goverened by a distributed
+body. Do I have a corporate-wide registry of them? I might have a couple of helm chart registries, and a couple of 
+common kustomize repos. But utilizing it, I still need some domain knowledge to utilize and explore those. Is there a 
+technical representation for this, that I can act upon and inventorize?
+
+**Conclusion**
+
+Those are **awesome** scenarios already. We're getting stuff done in potentially cross-functioning teams, and we're 
+packaging clusters of kubernetes resources into logical units, We're even going towards having a single source of truth 
+with little magic between commit and deployment! Arriving here means you're probably already doing loads of cool stuff.
