@@ -14,7 +14,7 @@ spec:
     listKind: CapDepList
     plural: capdeps
     singular: capdep
-  scope: Cluster
+  scope: Namespaced
   validation:
     openAPIV3Schema:
       description: CapDep is the Schema for the capdeps API
