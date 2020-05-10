@@ -4,10 +4,10 @@
 	<img src="logo.png" width="20%" align="center" alt="ExternalDNS">
 </p>
 
-A meta layer for kubernetes applications. Shipcaps provides a meta layer over various awsome packaging tools and projects. 
-With our Custom Resources, we represent *providing* ("[Cap](#cap-capability)") a kubernetes application, and *using* ("[App](#app-application)") a kubernetes application in a 
-normalized fashion. We embrace kubernetes' ecosystem diversity and are normalizing operations with various existing 
-tools and do not aim to replace them.
+**A meta layer for kubernetes application packages!** Shipcaps provides a meta layer over various awesome packaging 
+tools and projects. With our Custom Resources, we represent *providing* ("[Cap](#cap-capability)") a kubernetes 
+application, and *using* ("[App](#app-application)") a kubernetes application in a normalized fashion. We embrace 
+kubernetes' ecosystem diversity and normalize operations with various existing tools. **We don't aim to replace them.**
 
 Table of Contents
 =================
