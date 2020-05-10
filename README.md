@@ -7,8 +7,8 @@
 **Provide different-looking kubernetes packages in a normalized fashion!**
 
 Shipcaps aims to be a **simple and accessible** tool for:
-    * kubernetes engineers to *provide* a kubernetes application (helm, kustomize, custom resrouces, ...)
-    * developers to *consume* a kubernetes application
+  * kubernetes engineers to *provide* a kubernetes application (helm, kustomize, custom resrouces, ...)
+  * developers to *consume* a kubernetes application
 
 
 Table of Contents
