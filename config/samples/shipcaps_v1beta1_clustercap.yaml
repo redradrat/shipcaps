@@ -1,0 +1,7 @@
+apiVersion: shipcaps.redradrat.xyz/v1beta1
+kind: ClusterCap
+metadata:
+  name: clustercap-sample
+spec:
+  # Add fields here
+  foo: bar

@@ -8,9 +8,9 @@ resources:
   kind: App
   version: v1beta1
 - group: shipcaps
-  kind: CapMaterial
+  kind: CapDep
   version: v1beta1
 - group: shipcaps
-  kind: CapDep
+  kind: ClusterCap
   version: v1beta1
 version: "2"

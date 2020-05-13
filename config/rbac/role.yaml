@@ -74,3 +74,23 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - shipcaps.redradrat.xyz
+  resources:
+  - clustercaps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - shipcaps.redradrat.xyz
+  resources:
+  - clustercaps/status
+  verbs:
+  - get
+  - patch
+  - update

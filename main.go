@@ -114,6 +114,14 @@ func main() {
 	if !webhooksDisabled {
 		mgr.GetWebhookServer().Register(webhooks.AppValidatorPath, &webhook.Admission{Handler: &webhooks.AppValidator{Client: mgr.GetClient()}})
 	}
+	if err = (&controllers.ClusterCapReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("ClusterCap"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ClusterCap")
+		os.Exit(1)
+	}
 	// +kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")

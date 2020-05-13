@@ -16,7 +16,7 @@ spec:
     shortNames:
     - cap
     singular: cap
-  scope: Cluster
+  scope: Namespaced
   validation:
     openAPIV3Schema:
       description: Cap is the Schema for the caps API

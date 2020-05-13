@@ -16,6 +16,28 @@ limitations under the License.
 
 package v1beta1
 
+import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
+// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+
+// ClusterCapSpec defines the desired state of ClusterCap
+type ClusterCapSpec struct {
+	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+	// Important: Run "make" to regenerate code after modifying this file
+
+	// Foo is an example field of ClusterCap. Edit ClusterCap_types.go to remove/update
+	Foo string `json:"foo,omitempty"`
+}
+
+// ClusterCapStatus defines the observed state of ClusterCap
+type ClusterCapStatus struct {
+	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+	// Important: Run "make" to regenerate code after modifying this file
+}
+
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:path=clustercaps,scope=Cluster,shortName=clustercap
 
@@ -24,8 +46,12 @@ type ClusterCap Cap
 
 // +kubebuilder:object:root=true
 
-// CapList contains a list of Cap
-type ClusterCapList CapList
+// ClusterCapList contains a list of ClusterCap
+type ClusterCapList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []ClusterCap `json:"items"`
+}
 
 func init() {
 	SchemeBuilder.Register(&ClusterCap{}, &ClusterCapList{})

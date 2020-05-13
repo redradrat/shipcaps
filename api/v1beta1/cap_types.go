@@ -159,7 +159,7 @@ type CapStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:path=caps,scope=Cluster,shortName=cap
+// +kubebuilder:resource:path=caps,shortName=cap
 
 // Cap is the Schema for the caps API
 type Cap struct {
