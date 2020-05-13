@@ -111,9 +111,6 @@ spec:
               description: Values is a list of inputs needed to create this app
               format: byte
               type: string
-          required:
-          - capRef
-          - clusterCapRef
           type: object
         status:
           description: AppStatus defines the observed state of App
