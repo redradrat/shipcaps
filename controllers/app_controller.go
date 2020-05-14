@@ -150,16 +150,38 @@ func (r *AppReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 }
 
 func makeHelmValues(in map[string]interface{}) map[string]interface{} {
-	out := make(map[string]interface{})
-	for key, val := range in {
-		if strings.Contains(key, ".") {
-			subs := strings.SplitN(key, ".", 2)
-			out[subs[0]] = makeHelmValues(map[string]interface{}{subs[1]: val})
-		} else {
-			out[key] = val
+	// create output map
+	var out = make(map[string]interface{})
+
+	// iterate through all input keys
+	for k, v := range in {
+		// separate key segments
+		keysegments := strings.Split(k, ".")
+
+		// new map var from out map. different reference, same underlying object
+		inter := out
+
+		// iterate through all segments -1 to create our map hierarchy; last one will be assigned directly
+		for _, seg := range keysegments[:len(keysegments)-1] {
+			// get the value if segment already exists
+			new, ok := inter[seg]
+			if !ok {
+				// segment didn't exist, let's create a new map object and put it as value
+				new = make(map[string]interface{})
+				inter[seg] = new
+			}
+			// We will now overwrite our inter reference to be the new map object, as we want to
+			// iterate deeper into the hierarchy.
+			// Out will still reference the highest point of the underlying object.
+			inter = new.(map[string]interface{})
 		}
+
+		// we can assign the value finally, as inter now references the
+		// deepest map object in our hierarchy.
+		inter[keysegments[len(keysegments)-1]] = v
 	}
 	return out
+
 }
 
 func (r *AppReconciler) ReconcileHelmChartCapTypeApp(src shipcapsv1beta1.CapSource, app shipcapsv1beta1.App, capValues parsing.CapValues, ctx context.Context, log logr.Logger) error {
