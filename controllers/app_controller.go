@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	helmv1 "github.com/fluxcd/helm-operator/pkg/apis/helm.fluxcd.io/v1"
@@ -148,11 +149,21 @@ func (r *AppReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}, nil
 }
 
-func (r *AppReconciler) ReconcileHelmChartCapTypeApp(src shipcapsv1beta1.CapSource, app shipcapsv1beta1.App, capValues parsing.CapValues, ctx context.Context, log logr.Logger) error {
-	helmValueMap := make(map[string]interface{})
-	for _, val := range capValues {
-		helmValueMap[string(val.TargetIdentifier)] = val.Value
+func makeHelmValues(in map[string]interface{}) map[string]interface{} {
+	out := make(map[string]interface{})
+	for key, val := range in {
+		if strings.Contains(key, ".") {
+			subs := strings.SplitN(key, ".", 2)
+			out[subs[0]] = makeHelmValues(map[string]interface{}{subs[1]: val})
+		} else {
+			out[key] = val
+		}
 	}
+	return out
+}
+
+func (r *AppReconciler) ReconcileHelmChartCapTypeApp(src shipcapsv1beta1.CapSource, app shipcapsv1beta1.App, capValues parsing.CapValues, ctx context.Context, log logr.Logger) error {
+	helmValueMap := makeHelmValues(capValues.Map())
 
 	helmRel := helmv1.HelmRelease{
 		ObjectMeta: v1.ObjectMeta{

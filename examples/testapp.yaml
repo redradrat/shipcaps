@@ -4,7 +4,9 @@ metadata:
   name: test
   namespace: default
 spec:
-  capRef: test
+  capRef:
+    name: test
+    namespace: default
   values:
     - key: ingressClass
       value: ralph
