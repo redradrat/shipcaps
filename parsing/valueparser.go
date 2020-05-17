@@ -43,7 +43,7 @@ func (av AppValues) Map() map[string]interface{} {
 }
 
 func ParseRawAppValues(in RawAppValues) (AppValues, error) {
-	avu := AppValueUnmarshaler{}
+	avu := AppValueJSON{}
 	if in != nil {
 		if err := json.Unmarshal(in, &avu); err != nil {
 			return nil, err
@@ -53,7 +53,7 @@ func ParseRawAppValues(in RawAppValues) (AppValues, error) {
 }
 
 func ParseRawCapValues(in RawCapValues) (CapValues, error) {
-	cvu := CapValueUnmarshaler{}
+	cvu := CapValueJSON{}
 	if in != nil {
 		if err := json.Unmarshal(in, &cvu); err != nil {
 			return nil, err
@@ -62,15 +62,15 @@ func ParseRawCapValues(in RawCapValues) (CapValues, error) {
 	return cvu.Data, nil
 }
 
-type CapValueUnmarshaler struct {
+type CapValueJSON struct {
 	Data []CapValue
 }
 
-type AppValueUnmarshaler struct {
+type AppValueJSON struct {
 	Data []AppValue
 }
 
-func (cu *CapValueUnmarshaler) UnmarshalJSON(b []byte) error {
+func (cu *CapValueJSON) UnmarshalJSON(b []byte) error {
 	umList := []CapValue{}
 	err := json.Unmarshal(b, &umList)
 	if err != nil {
@@ -80,7 +80,7 @@ func (cu *CapValueUnmarshaler) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (cu *AppValueUnmarshaler) UnmarshalJSON(b []byte) error {
+func (cu *AppValueJSON) UnmarshalJSON(b []byte) error {
 	umList := []AppValue{}
 	err := json.Unmarshal(b, &umList)
 	if err != nil {
@@ -88,4 +88,20 @@ func (cu *AppValueUnmarshaler) UnmarshalJSON(b []byte) error {
 	}
 	cu.Data = umList
 	return nil
+}
+
+func (cu *CapValueJSON) MarshalJSON() ([]byte, error) {
+	out, err := json.Marshal(cu.Data)
+	if err != nil {
+		return out, err
+	}
+	return out, nil
+}
+
+func (cu *AppValueJSON) MarshalJSON() ([]byte, error) {
+	out, err := json.Marshal(cu.Data)
+	if err != nil {
+		return out, err
+	}
+	return out, nil
 }
