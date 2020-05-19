@@ -42,6 +42,28 @@ func (av AppValues) Map() map[string]interface{} {
 	return outmap
 }
 
+func (av AppValues) Raw() (RawAppValues, error) {
+	var err error
+	raw := RawAppValues{}
+	if len(av) != 0 {
+		if raw, err = json.Marshal(av); err != nil {
+			return nil, err
+		}
+	}
+	return raw, nil
+}
+
+func (cv CapValues) Raw() (RawCapValues, error) {
+	var err error
+	raw := RawCapValues{}
+	if len(cv) != 0 {
+		if raw, err = json.Marshal(cv); err != nil {
+			return nil, err
+		}
+	}
+	return raw, nil
+}
+
 func ParseRawAppValues(in RawAppValues) (AppValues, error) {
 	avu := AppValueJSON{}
 	if in != nil {
