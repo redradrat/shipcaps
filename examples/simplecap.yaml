@@ -20,7 +20,7 @@ spec:
       - apiVersion: v1
         kind: Namespace
         metadata:
-          name: "{{ namespacename }}"
+          name: "{{ namespacename }}-test-{{namespacename}}"
   dependencies:
     - name: namespaces
       namespace: default

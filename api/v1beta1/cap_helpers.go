@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/redradrat/shipcaps/errors"
 	"github.com/redradrat/shipcaps/parsing"
@@ -76,7 +77,11 @@ func (source *CapSource) GetUnstructuredObjects(values parsing.CapValues) (unstr
 
 	for _, manifest := range parseMap {
 		unstruct := unstructured.Unstructured{}
-		unstruct.SetUnstructuredContent(ReplacePlaceholders(manifest, values))
+		unstructContent, err := ReplacePlaceholders(manifest, values)
+		if err != nil {
+			return uList, err
+		}
+		unstruct.SetUnstructuredContent(unstructContent)
 		uList.Items = append(uList.Items, unstruct)
 	}
 
@@ -84,36 +89,55 @@ func (source *CapSource) GetUnstructuredObjects(values parsing.CapValues) (unstr
 }
 
 // ReplacePlaceholder takes a map and replaces any found placeholder string values with arbitrary values
-func ReplacePlaceholders(in map[string]interface{}, vals parsing.CapValues) map[string]interface{} {
+func ReplacePlaceholders(in map[string]interface{}, vals parsing.CapValues) (map[string]interface{}, error) {
 	out := make(map[string]interface{})
 	// Iterate through the whole map
 	for key, value := range in {
 		// Let's check which type our value is
-		switch value.(type) {
+		switch typedval := value.(type) {
 		case string:
-			// If our value is a placeholder string, then replace the whole value with what we get
-			// from our CapValues. If it's not a Placeholder, we keep the value in place.
-			if id, ok := Placeholder(value.(string)); ok {
+			if id, ok := IsFullPlaceholder(typedval); ok {
+				// If our value is a placeholder string, then replace the whole value with what we get
+				// from our CapValues.
 				out[key] = vals.Map()[id]
+			} else if placeholders, ok := IsStringPlaceholders(typedval); ok {
+				// If our value is a string that contains multiple placeholders, then replace the subparts
+				// with what we get from our CapValues.
+				intstr := typedval
+				for _, placeholder := range placeholders {
+					id, _ := IsFullPlaceholder(placeholder)
+					targetval, ok := vals.Map()[id].(string)
+					if !ok {
+						return out, errors.NewShipCapsError(InvalidMaterialSpecCode, "non-string value used in in-line string replacement")
+					}
+					intstr = strings.ReplaceAll(intstr, placeholder, targetval)
+				}
+				out[key] = intstr
 			} else {
+				// If it's not a Placeholder, we keep the value in place.
 				out[key] = value
 			}
 		case map[string]interface{}:
 			// If our value is another map[string]interface{}, then onwards into the rabbit hole.
-			out[key] = ReplacePlaceholders(value.(map[string]interface{}), vals)
+			intval, err := ReplacePlaceholders(typedval, vals)
+			if err != nil {
+				return nil, err
+			}
+			out[key] = intval
 		default:
 			// In all other cases, we just leave the value be.
 			out[key] = value
 		}
 	}
-	return out
+	return out, nil
 }
 
-const PlaceholderRegex = `(?m){{\s+(\S*)\s*}}`
+const FullPlaceholderRegex = `^{{\s*(\S*)\s*}}$`
+const PartPlaceholderRegex = `({{\s*\S*\s*}})`
 
-// Placeholder checks a string input whether it is a placeholder, and returns the id of it if true
-func Placeholder(in string) (string, bool) {
-	rgx := regexp.MustCompile(PlaceholderRegex)
+// IsFullPlaceholder checks a string input whether it is only a placeholder, and returns the id of it if true
+func IsFullPlaceholder(in string) (string, bool) {
+	rgx := regexp.MustCompile(FullPlaceholderRegex)
 	if !rgx.MatchString(in) {
 		return "", false
 	}
@@ -128,6 +152,26 @@ func Placeholder(in string) (string, bool) {
 
 	// We got our string, so we're positive.
 	return ph, true
+}
+
+// IsStringPlaceholders checks a string input whether it contains placeholders, and returns the
+// list of placeholders, if true
+func IsStringPlaceholders(in string) ([]string, bool) {
+	rgx := regexp.MustCompile(PartPlaceholderRegex)
+	if !rgx.MatchString(in) {
+		return nil, false
+	}
+
+	// Now let's get our placeholders
+	phs := rgx.FindAllString(in, -1)
+	// If we didn't find a string, then the input was not a placeholder
+	if len(phs) == 0 {
+		// No string found, return false
+		return nil, false
+	}
+
+	// We got our strings, so we're positive.
+	return phs, true
 }
 
 // IsInLine returns true if the
