@@ -29,6 +29,7 @@ type AppSpec struct {
 	// CapRef refers to the Cap that should be applied
 	//
 	// +kubebuilder:validation:Optional
+	// +nullable
 	CapRef *v1.ObjectReference `json:"capRef"`
 
 	// ClusterCapRef refers to the ClusterCap that should be applied
