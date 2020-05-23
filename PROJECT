@@ -13,4 +13,7 @@ resources:
 - group: shipcaps
   kind: ClusterCap
   version: v1beta1
+- group: shipcaps
+  kind: CapVersion
+  version: v1beta1
 version: "2"

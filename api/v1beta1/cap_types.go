@@ -17,132 +17,17 @@ limitations under the License.
 package v1beta1
 
 import (
-	"encoding/json"
-
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/redradrat/shipcaps/parsing"
 )
-
-// ValueType specifies the type of an Input. Used for parsing.
-type ValueType string
-
-const (
-	// StringInputType identifies an Input should be parsed as string
-	StringInputType ValueType = "string"
-	// IntInputType identifies an Input should be parsed as int
-	IntInputType ValueType = "int"
-	// FloatInputType identifies an Input should be parsed as float
-	FloatInputType ValueType = "float"
-	// StringListInputType identifies an Input should be parsed as a list of string
-	StringListInputType ValueType = "stringlist"
-)
-
-// CapInput defines an Input required for our Cap
-type CapInput struct {
-	Key string `json:"key"`
-
-	// Type identifies the type of the this input (string, int, ...). Used for parsing.
-	//
-	// +kubebuilder:validation:Required
-	Type ValueType `json:"type"`
-
-	// Optional identifies whether this Input is required or not
-	//
-	// +kubebuilder:validation:Optional
-	Optional bool `json:"optional"`
-
-	// TransformationIdentifier identifies the replacement placeholder.
-	//
-	// +kubebuilder:validation:Optional
-	TargetIdentifier parsing.TargetIdentifier `json:"targetId,omitempty"`
-}
-
-// CapInputs is a list of CapInputs
-type CapInputs []CapInput
-
-// RepoAuth references authentication credentials for a Helm Chart Repo
-type RepoAuth struct {
-	// Username is the username to authenticate with for the Repository
-	//
-	// +kubebuilder:validation:Required
-	Username v1.EnvVarSource `json:"username"`
-
-	// Password is the password to authenticate with for the Repository
-	//
-	// +kubebuilder:validation:Required
-	Password v1.EnvVarSource `json:"password"`
-}
-
-// RepoSpec specifies a specific git repository and revision
-type RepoSpec struct {
-	// RepoURI is the URI to the specific git repository (GitOps y'all!)
-	//
-	// +kubebuilder:validation:Required
-	URI string `json:"uri"`
-
-	// Ref specifies a GitRef to use for the repo
-	//
-	// +kubebuilder:validation:Optional
-	Ref string `json:"ref,omitempty"`
-
-	// Path specifies a subpath in the repo
-	//
-	// +kubebuilder:validation:Optional
-	Path string `json:"path,omitempty"`
-
-	// Auth potentially needed authentication credentials for the referenced material
-	//
-	// +kubebuilder:validation:Optional
-	Auth RepoAuth `json:"auth,omitempty"`
-}
-
-// CapSourceType specifies the type of a Cap. Used for identifying a backend.
-type CapSourceType string
-
-const (
-	// SimpleCapSourceType is a simple value-replacement Cap
-	SimpleCapSourceType CapSourceType = "simple"
-
-	// HelmChartCapSourceType abstracts a Helm Chart as a Cap
-	HelmChartCapSourceType CapSourceType = "helmchart"
-)
-
-type CapSource struct {
-	// Type specifies the type of to our Cap (e.g. what is our backend? Helm, Manifests, ...)
-	//
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=helmchart;simple
-	Type CapSourceType `json:"type"`
-
-	// Repo is specification of the git repository (GitOps y'all!)
-	//
-	// +kubebuilder:validation:Optional
-	Repo RepoSpec `json:"repo"`
-
-	// InLine holds a list of manifests to use as material
-	//
-	// +kubebuilder:validation:Optional
-	InLine json.RawMessage `json:"inline,omitempty"`
-}
 
 // CapSpec defines the desired state of Cap
 type CapSpec struct {
-	// Inputs specify all Inputs that can be given to our Cap
-	//
-	// +kubebuilder:validation:Optional
-	Inputs CapInputs `json:"inputs,omitempty"`
 
-	// Values allows to specify provided values. This can reduce user choice when using a Helm Chart for example.
-	//
-	// +kubebuilder:validation:Optional
-	Values json.RawMessage `json:"values,omitempty"`
-
-	// Source is an object reference to the required CapSource
+	// Versions allows for the selection of CapVersions that this Cap exposes
 	//
 	// +kubebuilder:validation:Required
-	Source CapSource `json:"source"`
+	Versions metav1.LabelSelector `json:"versions,omitempty"`
 
 	// Dependencies specify Apps that this App depends on
 	//

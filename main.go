@@ -122,6 +122,14 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "ClusterCap")
 		os.Exit(1)
 	}
+	if err = (&controllers.CapVersionReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("CapVersion"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "CapVersion")
+		os.Exit(1)
+	}
 	// +kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")
