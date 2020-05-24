@@ -29,13 +29,14 @@ type AppSpec struct {
 	// CapRef refers to the Cap that should be applied
 	//
 	// +kubebuilder:validation:Optional
-	CapRef *v1.ObjectReference `json:"capRef"`
+	// +nullable
+	CapRef *v1.ObjectReference `json:"capRef,omitempty"`
 
 	// ClusterCapRef refers to the ClusterCap that should be applied
 	//
 	// +kubebuilder:validation:Optional
 	// +nullable
-	ClusterCapRef *v1.ObjectReference `json:"clusterCapRef"`
+	ClusterCapRef *v1.ObjectReference `json:"clusterCapRef,omitempty"`
 
 	// Values is a list of inputs needed to create this app
 	//
