@@ -19,23 +19,26 @@ package v1beta1
 import (
 	"encoding/json"
 
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+type CapReference struct {
+	// The name of the referred Cap
+	// +kubebuilder:validation:Required
+	Name string `json:"name"`
+
+	// The namespace the referred Cap resides in (leave empty for cluster-scoped referenced)
+	// +kubebuilder:validation:Optional
+	Namespace string `json:"namespace"`
+}
 
 // AppSpec defines the desired state of App
 type AppSpec struct {
 
 	// CapRef refers to the Cap that should be applied
 	//
-	// +kubebuilder:validation:Optional
-	CapRef *v1.ObjectReference `json:"capRef"`
-
-	// ClusterCapRef refers to the ClusterCap that should be applied
-	//
-	// +kubebuilder:validation:Optional
-	// +nullable
-	ClusterCapRef *v1.ObjectReference `json:"clusterCapRef"`
+	// +kubebuilder:validation:Required
+	CapRef *CapReference `json:"capRef"`
 
 	// Values is a list of inputs needed to create this app
 	//

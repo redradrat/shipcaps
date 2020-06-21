@@ -4,7 +4,6 @@
 resources:
 - bases/shipcaps.redradrat.xyz_caps.yaml
 - bases/shipcaps.redradrat.xyz_apps.yaml
-- bases/shipcaps.redradrat.xyz_capdeps.yaml
 - bases/shipcaps.redradrat.xyz_clustercaps.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 

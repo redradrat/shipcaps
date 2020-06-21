@@ -24,12 +24,14 @@ import (
 
 	helmv1 "github.com/fluxcd/helm-operator/pkg/apis/helm.fluxcd.io/v1"
 	"github.com/go-logr/logr"
+	"github.com/oliveagle/jsonpath"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	shipcapsv1beta1 "github.com/redradrat/shipcaps/api/v1beta1"
 	"github.com/redradrat/shipcaps/parsing"
@@ -63,90 +65,73 @@ func (r *AppReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}, client.IgnoreNotFound(err)
 	}
 
-	if app.Spec.ClusterCapRef != nil && app.Spec.CapRef != nil {
-		return ctrl.Result{}, fmt.Errorf("both ClusterCapRef and CapRef set")
-	}
-	if app.Spec.ClusterCapRef == nil && app.Spec.CapRef == nil {
-		return ctrl.Result{}, fmt.Errorf("neither ClusterCapRef nor CapRef set")
-	}
-
-	// Get the referenced ClusterCap
-	var cap shipcapsv1beta1.Cap
-	if app.Spec.ClusterCapRef != nil {
-		clusterCap := shipcapsv1beta1.ClusterCap{}
-		key := client.ObjectKey{
-			Name: app.Spec.ClusterCapRef.Name,
-		}
-		err = r.Client.Get(ctx, key, &clusterCap)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-		cap = shipcapsv1beta1.Cap(clusterCap)
-	}
-
-	// Get the referenced Cap
-	if app.Spec.CapRef != nil {
-		key := client.ObjectKey{
-			Namespace: app.Spec.CapRef.Namespace,
-			Name:      app.Spec.CapRef.Name,
-		}
-		err = r.Client.Get(ctx, key, &cap)
-		if err != nil {
+	// Get the referenced Cap/ClusterCap
+	_, err = app.ParentCap(r.Client, ctx)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, fmt.Errorf("referenced Caps are unavailable: %s", err)
+		} else {
 			return ctrl.Result{}, err
 		}
 	}
 
-	// Get the required CapDeps
-	var capdeps []shipcapsv1beta1.CapDep
-	for _, dep := range cap.Spec.Dependencies {
-		capdep := shipcapsv1beta1.CapDep{}
-		err = r.Client.Get(ctx, client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}, &capdep)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-		capdeps = append(capdeps, capdep)
-	}
+	// Reconcile the defined dependencies
+	// if err := r.reconcileDeps(app, parentCap, ctx); err != nil {
+	// 	return ctrl.Result{}, err
+	// }
 
-	// Reconcile the Dependencies for this App
-	for _, dep := range capdeps {
-		depValues, err := dep.RenderValues()
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-
-		switch dep.Spec.Source.Type {
-		case shipcapsv1beta1.SimpleCapSourceType:
-			if err := r.ReconcileSimpleCapTypeApp(dep.Spec.Source, &app, depValues, ctx, log); err != nil {
-				return ctrl.Result{}, err
-			}
-		case shipcapsv1beta1.HelmChartCapSourceType:
-			if err := r.ReconcileHelmChartCapTypeApp(dep.Spec.Source, app, depValues, ctx, log); err != nil {
-				return ctrl.Result{}, err
-			}
-		}
-	}
-
-	// Reconcile the App itself
-	capValues, err := cap.RenderValues(&app)
+	// Reconcile the actual App now
+	_, err = app.CreateOrUpdate(r.Client, ctx)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	switch cap.Spec.Source.Type {
-	case shipcapsv1beta1.SimpleCapSourceType:
-		if err := r.ReconcileSimpleCapTypeApp(cap.Spec.Source, &app, capValues, ctx, log); err != nil {
-			return ctrl.Result{}, err
-		}
-	case shipcapsv1beta1.HelmChartCapSourceType:
-		if err := r.ReconcileHelmChartCapTypeApp(cap.Spec.Source, app, capValues, ctx, log); err != nil {
-			return ctrl.Result{}, err
-		}
-	}
-
+	// Done
 	log.V(1).Info("Successfully Reconciled")
 	return ctrl.Result{
 		RequeueAfter: r.RequeueDuration,
 	}, nil
+}
+
+// Creates the secret holding the outputs for the App
+func (r *AppReconciler) createAppSecret(app shipcapsv1beta1.App, parentCap shipcapsv1beta1.Cap, ctx context.Context) error {
+
+	outputMap := make(map[string]string)
+
+	for _, output := range parentCap.Spec.Outputs {
+		unstruct := unstructured.Unstructured{}
+		err := r.Get(ctx, client.ObjectKey{Name: output.ObjectRef.Name, Namespace: output.ObjectRef.Namespace}, &unstruct)
+		if err != nil {
+			return err
+		}
+
+		outputVal, err := jsonpath.JsonPathLookup(unstruct.UnstructuredContent, output.FieldRef.FieldPath)
+		if err != nil {
+			return err
+		}
+
+		outputMap[output.TargetIdentifier] = outputVal.(string)
+	}
+
+	secret := corev1.Secret{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      app.Name,
+			Namespace: app.Namespace,
+		},
+	}
+
+	mutateFunction := func() error {
+		secret.StringData = outputMap
+		return nil
+	}
+
+	_, err := ctrl.CreateOrUpdate(ctx, r.Client, &app, mutateFunction)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
 }
 
 func makeHelmValues(in map[string]interface{}) map[string]interface{} {
@@ -211,37 +196,46 @@ func (r *AppReconciler) ReconcileHelmChartCapTypeApp(src shipcapsv1beta1.CapSour
 	return nil
 }
 
-func (r *AppReconciler) ReconcileSimpleCapTypeApp(src shipcapsv1beta1.CapSource, app *shipcapsv1beta1.App, capValues parsing.CapValues, ctx context.Context, log logr.Logger) error {
-
-	var err error
-	if err = src.Check(); err != nil {
-		return err
-	}
-
-	var processedOut unstructured.UnstructuredList
-	if src.IsInLine() {
-		processedOut, err = src.GetUnstructuredObjects(capValues)
-		if err != nil {
-			return err
-		}
-	}
-
-	for _, entry := range processedOut.Items {
-		couFunc := func() error { return nil }
-		if entry.GetNamespace() != "" {
-			if err := controllerutil.SetControllerReference(app, &entry, r.Scheme); err != nil {
-				return err
-			}
-		}
-		res, err := ctrl.CreateOrUpdate(ctx, r.Client, &entry, couFunc)
-		log.V(1).Info(fmt.Sprintf("resource [kind: %s, name: %s, namespace: %s] %s", entry.GetKind(), entry.GetName(), entry.GetNamespace(), res))
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
+//func (r *AppReconciler) reconcileDeps(app shipcapsv1beta1.App, cap shipcapsv1beta1.Cap, ctx context.Context) error {
+//	var resolvedDeps []shipcapsv1beta1.Cap
+//
+//	for _, dep := range cap.Spec.Dependencies {
+//		var cap shipcapsv1beta1.Cap
+//		var key client.ObjectKey
+//
+//		if dep.Namespace == "" {
+//			key = client.ObjectKey{Name: dep.Name}
+//		} else {
+//			key = client.ObjectKey{Name: dep.Name, Namespace: dep.Namespace}
+//		}
+//
+//		if err := r.Get(ctx, key, &cap); err != nil {
+//			return err
+//		}
+//		resolvedDeps = append(resolvedDeps, cap)
+//	}
+//
+//	// Reconcile the Dependencies for this App
+//	for _, dep := range resolvedDeps {
+//		depValues, err := dep.RenderValues()
+//		if err != nil {
+//			return err
+//		}
+//
+//		switch dep.Spec.Source.Type {
+//		case shipcapsv1beta1.SimpleCapSourceType:
+//			if err := r.ReconcileSimpleCapTypeApp(dep.Spec.Source, app, depValues, ctx, log); err != nil {
+//				return err
+//			}
+//		case shipcapsv1beta1.HelmChartCapSourceType:
+//			if err := r.ReconcileHelmChartCapTypeApp(dep.Spec.Source, app, depValues, ctx, log); err != nil {
+//				return err
+//			}
+//		}
+//	}
+//
+//	return nil
+//}
 
 func (r *AppReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).

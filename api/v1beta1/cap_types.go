@@ -127,6 +127,26 @@ type CapSource struct {
 	InLine json.RawMessage `json:"inline,omitempty"`
 }
 
+type CapOutput struct {
+
+	// FieldRef holds a reference to a field in a k8s resource. (e.g. metadata.name)
+	//
+	// +kubebuilder:validation:Required
+	FieldRef v1.ObjectFieldSelector `json:"fieldRef"`
+
+	// ObjectRef holds a reference to a k8s resource. (e.g. secret 'xyz' in namespace 'default')
+	//
+	// +kubebuilder:validation:Required
+	ObjectRef *v1.ObjectReference `json:"objectRef"`
+
+	// TransformationIdentifier identifies the replacement placeholder.
+	//
+	// +kubebuilder:validation:Required
+	TargetIdentifier string `json:"targetId"`
+}
+
+type CapOutputs []CapOutput
+
 // CapSpec defines the desired state of Cap
 type CapSpec struct {
 	// Inputs specify all Inputs that can be given to our Cap
@@ -139,6 +159,11 @@ type CapSpec struct {
 	// +kubebuilder:validation:Optional
 	Values json.RawMessage `json:"values,omitempty"`
 
+	// Outputs allows to specify fieldReferences that will be rendered with an App.
+	//
+	// +kubebuilder:validation:Optional
+	Outputs CapOutputs `json:"outputs,omitempty"`
+
 	// Source is an object reference to the required CapSource
 	//
 	// +kubebuilder:validation:Required
@@ -146,7 +171,7 @@ type CapSpec struct {
 
 	// Dependencies specify Apps that this App depends on
 	//
-	// +kubebuilder:validation:Optional
+	// +kubebuild er:validation:Optional
 	Dependencies []v1.ObjectReference `json:"dependencies,omitempty"`
 }
 

@@ -2,72 +2,19 @@ package v1beta1
 
 import (
 	"encoding/json"
-	"fmt"
 	"regexp"
 	"strings"
 
 	"github.com/redradrat/shipcaps/errors"
-	"github.com/redradrat/shipcaps/parsing"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/types"
 )
 
-// RenderValues takes an App Object as input and uses its spec to render a complete set of CapValues
-func (cap *Cap) RenderValues(app *App) (parsing.CapValues, error) {
-	var outList []parsing.CapValue
-
-	// Unmarshal given App's values.
-	avs, err := parsing.ParseRawAppValues(parsing.RawAppValues(app.Spec.Values))
-	if err != nil {
-		return nil, err
-	}
-
-	// Go through the whole map and see if all Inputs are given, and have the right type.
-	avMap := avs.Map()
-	for _, in := range cap.Spec.Inputs {
-		var err bool
-		data, found := avMap[in.Key]
-		if !found {
-			if !in.Optional {
-				return nil, fmt.Errorf("required key '%s' not found in App values", in.Key)
-			}
-			continue
-		}
-		switch in.Type {
-		case StringInputType:
-			if _, ok := data.(string); !ok {
-				err = true
-			}
-		case StringListInputType:
-			if _, ok := data.([]string); !ok {
-				err = true
-			}
-		case IntInputType:
-			if _, ok := data.(int); !ok {
-				err = true
-			}
-		case FloatInputType:
-			if _, ok := data.(float32); !ok {
-				err = true
-			}
-		}
-		if err {
-			return nil, fmt.Errorf("required input '%s' is not of type '%s'", in.Key, in.Type)
-		}
-		// Value looks good, let's put it onto our output slice.
-		outList = append(outList, parsing.CapValue{TargetIdentifier: in.TargetIdentifier, Value: data})
-	}
-
-	// Unmarshal the Values from our Cap and put them onto the output slice
-	cvs, err := parsing.ParseRawCapValues(parsing.RawCapValues(cap.Spec.Values))
-	if err != nil {
-		return nil, err
-	}
-	outList = append(outList, cvs...)
-
-	return outList, nil
+func (cap *Cap) GetSpec() CapSpec {
+	return cap.Spec
 }
 
-func (source *CapSource) GetUnstructuredObjects(values parsing.CapValues) (unstructured.UnstructuredList, error) {
+func (source *CapSource) GetUnstructuredObjects(values map[string]interface{}) (unstructured.UnstructuredList, error) {
 	uList := unstructured.UnstructuredList{}
 	var parseMap []map[string]interface{}
 
@@ -89,7 +36,7 @@ func (source *CapSource) GetUnstructuredObjects(values parsing.CapValues) (unstr
 }
 
 // ReplacePlaceholder takes a map and replaces any found placeholder string values with arbitrary values
-func ReplacePlaceholders(in map[string]interface{}, vals parsing.CapValues) (map[string]interface{}, error) {
+func ReplacePlaceholders(in map[string]interface{}, vals map[string]interface{}) (map[string]interface{}, error) {
 	out := make(map[string]interface{})
 	// Iterate through the whole map
 	for key, value := range in {
@@ -99,14 +46,14 @@ func ReplacePlaceholders(in map[string]interface{}, vals parsing.CapValues) (map
 			if id, ok := IsFullPlaceholder(typedval); ok {
 				// If our value is a placeholder string, then replace the whole value with what we get
 				// from our CapValues.
-				out[key] = vals.Map()[id]
+				out[key] = vals[id]
 			} else if placeholders, ok := IsStringPlaceholders(typedval); ok {
 				// If our value is a string that contains multiple placeholders, then replace the subparts
 				// with what we get from our CapValues.
 				intstr := typedval
 				for _, placeholder := range placeholders {
 					id, _ := IsFullPlaceholder(placeholder)
-					targetval, ok := vals.Map()[id].(string)
+					targetval, ok := vals[id].(string)
 					if !ok {
 						return out, errors.NewShipCapsError(InvalidMaterialSpecCode, "non-string value used in in-line string replacement")
 					}
@@ -181,6 +128,17 @@ func (source *CapSource) IsInLine() bool {
 
 func (source *CapSource) IsRepo() bool {
 	return source.Repo.URI != ""
+}
+
+func (capref CapReference) IsClusterCap() bool {
+	return capref.Namespace == ""
+}
+
+func (capref CapReference) NamespacedName() types.NamespacedName {
+	if capref.IsClusterCap() {
+		return types.NamespacedName{Name: capref.Name}
+	}
+	return types.NamespacedName{Name: capref.Name, Namespace: capref.Namespace}
 }
 
 func (source *CapSource) Check() error {

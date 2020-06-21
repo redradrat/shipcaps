@@ -1,0 +1,19 @@
+apiVersion: shipcaps.redradrat.xyz/v1beta1
+kind: Cap
+metadata:
+  name: postgres
+  namespace: default
+spec:
+  inputs:
+    - key: password
+      type: string
+      targetId: postgresqlPassword
+    - key: username
+      type: string
+      targetId: postgresqlUsername
+  source:
+    type: helmchart
+    repo:
+      uri: https://github.com/helm/charts/stable
+      path: /postgresql
+      ref: master

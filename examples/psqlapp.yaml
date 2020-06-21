@@ -1,0 +1,15 @@
+apiVersion: shipcaps.redradrat.xyz/v1beta1
+kind: App
+metadata:
+  name: post-test
+  namespace: default
+spec:
+  capRef: 
+    name: postgres
+    namespace: default
+  values:
+    - key: password
+      value: "hellow@123"
+    - key: username
+      value: "dilshad"
+

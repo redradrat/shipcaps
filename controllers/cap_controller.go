@@ -57,7 +57,9 @@ func (r *CapReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, nil
 	} else {
 		cap.Status.ObservedGeneration = cap.ObjectMeta.Generation
-		r.Status().Update(ctx, &cap)
+		if err := r.Status().Update(ctx, &cap); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	src := cap.Spec.Source
@@ -69,7 +71,7 @@ func (r *CapReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return ctrl.Result{}, err
 		}
 		for _, man := range unstruct {
-			fmt.Println(fmt.Sprintf("Resource: %s | Name: %s", man.GroupVersionKind().String(), man.GetName()))
+			fmt.Printf("Resource: %s | Name: %s", man.GroupVersionKind().String(), man.GetName())
 			//if err := r.Client.Create(ctx, &man, client.DryRunAll); err != nil {
 			//	return ctrl.Result{}, err
 			//}

@@ -35,13 +35,13 @@ func (v *AppValidator) Handle(ctx context.Context, req admission.Request) admiss
 			fmt.Sprintf("referenced Cap '%s/%s' does not exist", cap.Namespace, cap.Name))
 	}
 
-	// Let's check if all required inputs from the Cap are in our App
-	// So let's execute the Value rendering and see whether we get any errors there
-	if _, err := cap.RenderValues(app); err != nil {
-		return admission.ValidationResponse(
-			false,
-			err.Error())
-	}
+	// // Let's check if all required inputs from the Cap are in our App
+	// // So let's execute the Value rendering and see whether we get any errors there
+	// if _, err := app.RenderInputs(v.Client, ctx); err != nil {
+	// 	return admission.ValidationResponse(
+	// 		false,
+	// 		err.Error())
+	// }
 
 	// Now we know that we did set everything properly
 	return admission.ValidationResponse(true, "all required key for referenced cap were provided")
