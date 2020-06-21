@@ -1,4 +1,4 @@
-package v1beta1
+package handlers
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 
 	helmv1 "github.com/fluxcd/helm-operator/pkg/apis/helm.fluxcd.io/v1"
 	"github.com/oliveagle/jsonpath"
+	shipcapsv1beta1 "github.com/redradrat/shipcaps/api/v1beta1"
 	"github.com/redradrat/shipcaps/errors"
 	"github.com/redradrat/shipcaps/parsing"
 	corev1 "k8s.io/api/core/v1"
@@ -16,10 +17,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (app *App) ParentCap(client client.Client, ctx context.Context) (interface{ GetSpec() CapSpec }, error) {
+type AppHandler shipcapsv1beta1.App
+
+type CapIFace interface {
+	GetSpec() shipcapsv1beta1.CapSpec
+}
+
+func (app *AppHandler) ParentCap(client client.Client, ctx context.Context) (CapIFace, error) {
 
 	if app.Spec.CapRef.IsClusterCap() {
-		var outcap Cap
+		var outcap shipcapsv1beta1.Cap
 
 		if err := client.Get(ctx, app.Spec.CapRef.NamespacedName(), &outcap); err != nil {
 			return nil, err
@@ -29,7 +36,7 @@ func (app *App) ParentCap(client client.Client, ctx context.Context) (interface{
 
 	} else {
 
-		var outcap ClusterCap
+		var outcap shipcapsv1beta1.ClusterCap
 
 		if err := client.Get(ctx, app.Spec.CapRef.NamespacedName(), &outcap); err != nil {
 			return nil, err
@@ -42,12 +49,12 @@ func (app *App) ParentCap(client client.Client, ctx context.Context) (interface{
 
 // CreateOrUpdate creates/updates the actual App on the cluster,
 // minus additional data input possibilities
-func (app *App) CreateOrUpdate(c client.Client, ctx context.Context) (map[string]string, error) {
+func (app *AppHandler) CreateOrUpdate(c client.Client, ctx context.Context) (map[string]string, error) {
 	return app.CreateOrUpdateWithData(c, ctx)
 }
 
 // CreateOrUpdate creates/updates the actual App on the cluster
-func (app *App) CreateOrUpdateWithData(c client.Client, ctx context.Context, data ...map[string]string) (map[string]string, error) {
+func (app *AppHandler) CreateOrUpdateWithData(c client.Client, ctx context.Context, data ...map[string]string) (map[string]string, error) {
 
 	outputMap := make(map[string]string)
 
@@ -80,7 +87,7 @@ func (app *App) CreateOrUpdateWithData(c client.Client, ctx context.Context, dat
 }
 
 // RenderValues takes an App Object as input and uses its spec to render a complete set of CapValues
-func (app *App) RenderInputs(parentCap interface{ GetSpec() CapSpec }, c client.Client, ctx context.Context, data ...map[string]string) (map[string]interface{}, error) {
+func (app *AppHandler) RenderInputs(parentCap CapIFace, c client.Client, ctx context.Context, data ...map[string]string) (map[string]interface{}, error) {
 	var outValues map[string]interface{}
 
 	// Unmarshal the Values from our Cap and put them onto the output map
@@ -120,19 +127,19 @@ func (app *App) RenderInputs(parentCap interface{ GetSpec() CapSpec }, c client.
 			continue
 		}
 		switch in.Type {
-		case StringInputType:
+		case shipcapsv1beta1.StringInputType:
 			if _, ok := data.(string); !ok {
 				err = true
 			}
-		case StringListInputType:
+		case shipcapsv1beta1.StringListInputType:
 			if _, ok := data.([]string); !ok {
 				err = true
 			}
-		case IntInputType:
+		case shipcapsv1beta1.IntInputType:
 			if _, ok := data.(int); !ok {
 				err = true
 			}
-		case FloatInputType:
+		case shipcapsv1beta1.FloatInputType:
 			if _, ok := data.(float32); !ok {
 				err = true
 			}
@@ -147,7 +154,7 @@ func (app *App) RenderInputs(parentCap interface{ GetSpec() CapSpec }, c client.
 	return outValues, nil
 }
 
-func (app *App) RenderOutputs(parentCap interface{ GetSpec() CapSpec }, c client.Client, ctx context.Context) (map[string]string, error) {
+func (app *AppHandler) RenderOutputs(parentCap CapIFace, c client.Client, ctx context.Context) (map[string]string, error) {
 	outputMap := make(map[string]string)
 
 	for _, output := range parentCap.GetSpec().Outputs {
@@ -185,7 +192,7 @@ func (app *App) RenderOutputs(parentCap interface{ GetSpec() CapSpec }, c client
 	return outputMap, nil
 }
 
-func (app *App) CreateOrUpdateSimple(src CapSource, capValues map[string]interface{}, c client.Client, ctx context.Context, refs ...v1.OwnerReference) error {
+func (app *AppHandler) CreateOrUpdateSimple(src shipcapsv1beta1.CapSource, capValues map[string]interface{}, c client.Client, ctx context.Context, refs ...v1.OwnerReference) error {
 
 	var err error
 	if err = src.Check(); err != nil {
@@ -211,7 +218,7 @@ func (app *App) CreateOrUpdateSimple(src CapSource, capValues map[string]interfa
 	return nil
 }
 
-func (app *App) CreateOrUpdateHelm(src CapSource, capValues map[string]interface{}, c client.Client, ctx context.Context) error {
+func (app *AppHandler) CreateOrUpdateHelm(src shipcapsv1beta1.CapSource, capValues map[string]interface{}, c client.Client, ctx context.Context) error {
 
 	helmValueMap := makeHelmValues(capValues)
 
@@ -278,16 +285,16 @@ const (
 	InvalidCapSourceType errors.ShipCapsErrorCode = "InvalidCapSourceType"
 )
 
-func (app *App) CreateOrUpdateRecursively(parentCap interface{ GetSpec() CapSpec }, capValues map[string]interface{}, c client.Client, ctx context.Context) error {
+func (app *AppHandler) CreateOrUpdateRecursively(parentCap CapIFace, capValues map[string]interface{}, c client.Client, ctx context.Context) error {
 
 	sourceType := parentCap.GetSpec().Source.Type
 
 	switch sourceType {
-	case SimpleCapSourceType:
+	case shipcapsv1beta1.SimpleCapSourceType:
 		if err := app.CreateOrUpdateSimple(parentCap.GetSpec().Source, capValues, c, ctx); err != nil {
 			return err
 		}
-	case HelmChartCapSourceType:
+	case shipcapsv1beta1.HelmChartCapSourceType:
 		if err := app.CreateOrUpdateHelm(parentCap.GetSpec().Source, capValues, c, ctx); err != nil {
 			return err
 		}

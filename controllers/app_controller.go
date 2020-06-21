@@ -19,22 +19,17 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	helmv1 "github.com/fluxcd/helm-operator/pkg/apis/helm.fluxcd.io/v1"
 	"github.com/go-logr/logr"
-	"github.com/oliveagle/jsonpath"
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	shipcapsv1beta1 "github.com/redradrat/shipcaps/api/v1beta1"
-	"github.com/redradrat/shipcaps/parsing"
+	"github.com/redradrat/shipcaps/handlers"
 )
 
 // AppReconciler reconciles a App object
@@ -65,8 +60,10 @@ func (r *AppReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}, client.IgnoreNotFound(err)
 	}
 
+	appHandler := handlers.AppHandler(app)
+
 	// Get the referenced Cap/ClusterCap
-	_, err = app.ParentCap(r.Client, ctx)
+	_, err = appHandler.ParentCap(r.Client, ctx)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return ctrl.Result{}, fmt.Errorf("referenced Caps are unavailable: %s", err)
@@ -81,7 +78,7 @@ func (r *AppReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	// }
 
 	// Reconcile the actual App now
-	_, err = app.CreateOrUpdate(r.Client, ctx)
+	_, err = appHandler.CreateOrUpdate(r.Client, ctx)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -91,109 +88,6 @@ func (r *AppReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	return ctrl.Result{
 		RequeueAfter: r.RequeueDuration,
 	}, nil
-}
-
-// Creates the secret holding the outputs for the App
-func (r *AppReconciler) createAppSecret(app shipcapsv1beta1.App, parentCap shipcapsv1beta1.Cap, ctx context.Context) error {
-
-	outputMap := make(map[string]string)
-
-	for _, output := range parentCap.Spec.Outputs {
-		unstruct := unstructured.Unstructured{}
-		err := r.Get(ctx, client.ObjectKey{Name: output.ObjectRef.Name, Namespace: output.ObjectRef.Namespace}, &unstruct)
-		if err != nil {
-			return err
-		}
-
-		outputVal, err := jsonpath.JsonPathLookup(unstruct.UnstructuredContent, output.FieldRef.FieldPath)
-		if err != nil {
-			return err
-		}
-
-		outputMap[output.TargetIdentifier] = outputVal.(string)
-	}
-
-	secret := corev1.Secret{
-		ObjectMeta: v1.ObjectMeta{
-			Name:      app.Name,
-			Namespace: app.Namespace,
-		},
-	}
-
-	mutateFunction := func() error {
-		secret.StringData = outputMap
-		return nil
-	}
-
-	_, err := ctrl.CreateOrUpdate(ctx, r.Client, &app, mutateFunction)
-	if err != nil {
-		return err
-	}
-
-	return nil
-
-}
-
-func makeHelmValues(in map[string]interface{}) map[string]interface{} {
-	// create output map
-	var out = make(map[string]interface{})
-
-	// iterate through all input keys
-	for k, v := range in {
-		// separate key segments
-		keysegments := strings.Split(k, ".")
-
-		// new map var from out map. different reference, same underlying object
-		inter := out
-
-		// iterate through all segments -1 to create our map hierarchy; last one will be assigned directly
-		for _, seg := range keysegments[:len(keysegments)-1] {
-			// get the value if segment already exists
-			new, ok := inter[seg]
-			if !ok {
-				// segment didn't exist, let's create a new map object and put it as value
-				new = make(map[string]interface{})
-				inter[seg] = new
-			}
-			// We will now overwrite our inter reference to be the new map object, as we want to
-			// iterate deeper into the hierarchy.
-			// Out will still reference the highest point of the underlying object.
-			inter = new.(map[string]interface{})
-		}
-
-		// we can assign the value finally, as inter now references the
-		// deepest map object in our hierarchy.
-		inter[keysegments[len(keysegments)-1]] = v
-	}
-	return out
-
-}
-
-func (r *AppReconciler) ReconcileHelmChartCapTypeApp(src shipcapsv1beta1.CapSource, app shipcapsv1beta1.App, capValues parsing.CapValues, ctx context.Context, log logr.Logger) error {
-	helmValueMap := makeHelmValues(capValues.Map())
-
-	helmRel := helmv1.HelmRelease{
-		ObjectMeta: v1.ObjectMeta{
-			Name:      app.Name,
-			Namespace: app.Namespace,
-		},
-	}
-	couFunc := func() error {
-		helmRel.Spec.Values = helmValueMap
-		cs := helmv1.GitChartSource{
-			GitURL: src.Repo.URI,
-			Ref:    src.Repo.Ref,
-			Path:   src.Repo.Path,
-		}
-		helmRel.Spec.GitChartSource = &cs
-		return nil
-	}
-	_, err := ctrl.CreateOrUpdate(ctx, r.Client, &helmRel, couFunc)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 //func (r *AppReconciler) reconcileDeps(app shipcapsv1beta1.App, cap shipcapsv1beta1.Cap, ctx context.Context) error {
