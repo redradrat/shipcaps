@@ -14,6 +14,9 @@ endif
 
 all: manager
 
+deps:
+	kubectl apply -f https://raw.githubusercontent.com/fluxcd/helm-operator/master/deploy/crds.yaml
+
 # Run tests
 test: generate fmt vet manifests
 	go test ./... -coverprofile cover.out

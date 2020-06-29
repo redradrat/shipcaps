@@ -78,15 +78,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.CapReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Cap"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Cap")
-		os.Exit(1)
-	}
-
 	parsedInterval, err := time.ParseDuration(requeueInterval)
 	if err != nil {
 		setupLog.Error(err, "unable to parse requeue interval", "controller", "App")
@@ -105,14 +96,26 @@ func main() {
 	if !webhooksDisabled {
 		mgr.GetWebhookServer().Register(webhooks.AppValidatorPath, &webhook.Admission{Handler: &webhooks.AppValidator{Client: mgr.GetClient()}})
 	}
-	if err = (&controllers.ClusterCapReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("ClusterCap"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "ClusterCap")
-		os.Exit(1)
-	}
+
+	// // Cap controller
+	// if err = (&controllers.CapReconciler{
+	// 	Client: mgr.GetClient(),
+	// 	Log:    ctrl.Log.WithName("controllers").WithName("Cap"),
+	// 	Scheme: mgr.GetScheme(),
+	// }).SetupWithManager(mgr); err != nil {
+	// 	setupLog.Error(err, "unable to create controller", "controller", "Cap")
+	// 	os.Exit(1)
+	// }
+
+	// // ClusterCap controller
+	// if err = (&controllers.ClusterCapReconciler{
+	// 	Client: mgr.GetClient(),
+	// 	Log:    ctrl.Log.WithName("controllers").WithName("ClusterCap"),
+	// 	Scheme: mgr.GetScheme(),
+	// }).SetupWithManager(mgr); err != nil {
+	// 	setupLog.Error(err, "unable to create controller", "controller", "ClusterCap")
+	// 	os.Exit(1)
+	// }
 	// +kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")

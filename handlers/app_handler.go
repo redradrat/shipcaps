@@ -26,7 +26,7 @@ type CapIFace interface {
 func (app *AppHandler) ParentCap(client client.Client, ctx context.Context) (CapIFace, error) {
 
 	if app.Spec.CapRef.IsClusterCap() {
-		var outcap shipcapsv1beta1.Cap
+		var outcap shipcapsv1beta1.ClusterCap
 
 		if err := client.Get(ctx, app.Spec.CapRef.NamespacedName(), &outcap); err != nil {
 			return nil, err
@@ -35,8 +35,7 @@ func (app *AppHandler) ParentCap(client client.Client, ctx context.Context) (Cap
 		return &outcap, nil
 
 	} else {
-
-		var outcap shipcapsv1beta1.ClusterCap
+		var outcap shipcapsv1beta1.Cap
 
 		if err := client.Get(ctx, app.Spec.CapRef.NamespacedName(), &outcap); err != nil {
 			return nil, err
@@ -88,7 +87,7 @@ func (app *AppHandler) CreateOrUpdateWithData(c client.Client, ctx context.Conte
 
 // RenderValues takes an App Object as input and uses its spec to render a complete set of CapValues
 func (app *AppHandler) RenderInputs(parentCap CapIFace, c client.Client, ctx context.Context, data ...map[string]string) (map[string]interface{}, error) {
-	var outValues map[string]interface{}
+	outValues := make(map[string]interface{})
 
 	// Unmarshal the Values from our Cap and put them onto the output map
 	cvs, err := parsing.ParseRawCapValues(parsing.RawCapValues(parentCap.GetSpec().Values))
@@ -298,7 +297,9 @@ func (app *AppHandler) CreateOrUpdateRecursively(parentCap CapIFace, capValues m
 		if err := app.CreateOrUpdateHelm(parentCap.GetSpec().Source, capValues, c, ctx); err != nil {
 			return err
 		}
+	default:
+		return errors.NewShipCapsError(InvalidCapSourceType, fmt.Sprintf("unknown CapSource Type '%s'", sourceType))
 	}
 
-	return errors.NewShipCapsError(InvalidCapSourceType, fmt.Sprintf("unknown CapSource Type '%s'", sourceType))
+	return nil
 }
